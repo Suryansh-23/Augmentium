@@ -35,8 +35,8 @@ pub fn instantiate(
         symbol: msg._symbol,
         decimals: msg._decimals,
         total_supply: msg._initial_supply,
-        balances: HashMap::<Addr, Uint256>::new(),
-        allowances: HashMap::<Addr, HashMap<Addr, Uint256>>::new(),
+        balances: HashMap::<Addr, Uint128>::new(),
+        allowances: HashMap::<Addr, HashMap<Addr, Uint128>>::new(),
         exchange_rate: msg._exchange_rate,
         asset: msg._asset,
     };
