@@ -15,6 +15,9 @@ pub enum ContractError {
     #[error("Invalid sender or recipient address: {addr:?}")]
     InvalidSenderOrRecipient { addr: Addr },
 
+    #[error("Insufficient funds sent")]
+    InsufficientFunds {},
+
     #[error("current balance less than amount: {balance:?}")]
     InsufficientBalance { balance: Uint128 },
 

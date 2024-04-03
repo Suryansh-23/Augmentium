@@ -2,12 +2,13 @@
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{coins, Addr, Uint128};
 use cosmwasm_std::{BankMsg, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult};
+use cw_utils::must_pay;
 
 use crate::error::ContractError;
 use crate::msg::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg};
-use crate::state::{State, DONATION_DENOM, STATE};
+use crate::state::{State, DENOM, STATE};
 use cw2::set_contract_version;
-use std::borrow::BorrowMut;
+use std::borrow::{Borrow, BorrowMut};
 use std::collections::HashMap;
 
 // version info for migration info
@@ -146,16 +147,16 @@ fn approve(
     Ok(Response::new().add_attribute("action", "approve"))
 }
 
-fn buy_gc(
-    deps: DepsMut,
-    env: Env,
-    info: MessageInfo,
-    asset_amount: Uint128,
-) -> Result<Response, ContractError> {
-    // TODO!
+fn buy_gc(deps: DepsMut, env: Env, info: MessageInfo) -> Result<Responsde, ContractError> {
+    let denom = DENOM.load(deps.storage)?;
+    let state = STATE.load(deps.storage)?;
+
+    let asset_amount = must_pay(&info, &denom).unwrap();
+
+    let cloned_deps = deps.into(); // Convert DepsMut into Deps
 
     transfer_from(
-        deps.borrow_mut(),
+        cloned_deps, // Use the cloned `deps` variable
         env.clone(),
         info.clone(),
         info.sender.clone(),
@@ -163,13 +164,21 @@ fn buy_gc(
         asset_amount,
     )?;
 
-    let state = STATE.load(deps.storage)?;
     let gc_amount = asset_amount / state.exchange_rate;
+    {
+        _transfer(
+            deps.borrow_mut(), // Use the original `deps` variable
+            env.clone(),
+            info.clone(),
+            env.contract.address.clone(),
+            info.sender.clone(),
+            gc_amount,
+        )?;
+    }
 
     let resp = Response::new()
-        // .add_message(messages)
-        .add_attribute("action", "buy_gc");
-
+        .add_attribute("action", "buy_gc")
+        .add_attribute("amount", asset_amount);
     Ok(resp)
 }
 
@@ -182,7 +191,7 @@ fn redeem_gc(
     let sender = info.sender.clone();
 
     let state = STATE.load(deps.storage)?;
-    let denom = DONATION_DENOM.load(deps.storage)?;
+    let denom = DENOM.load(deps.storage)?;
     let price = gc_amount * state.exchange_rate;
     let messages = BankMsg::Send {
         to_address: state.admin.to_string(),
@@ -197,7 +206,7 @@ fn redeem_gc(
 }
 
 fn transfer_from(
-    deps: &mut DepsMut,
+    deps: DepsMut,
     env: Env,
     info: MessageInfo,
     sender: Addr,
