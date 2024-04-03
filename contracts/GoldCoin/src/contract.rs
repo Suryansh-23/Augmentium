@@ -147,11 +147,11 @@ fn approve(
     Ok(Response::new().add_attribute("action", "approve"))
 }
 
-fn buy_gc(deps: DepsMut, env: Env, info: MessageInfo) -> Result<Responsde, ContractError> {
+fn buy_gc(deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, ContractError> {
     let denom = DENOM.load(deps.storage)?;
     let state = STATE.load(deps.storage)?;
 
-    let asset_amount = must_pay(&info, &denom).unwrap();
+    let asset_amount = must_pay(&info, &denom)?.u128();
 
     let cloned_deps = deps.into(); // Convert DepsMut into Deps
 
@@ -161,24 +161,24 @@ fn buy_gc(deps: DepsMut, env: Env, info: MessageInfo) -> Result<Responsde, Contr
         info.clone(),
         info.sender.clone(),
         env.contract.address.clone(),
-        asset_amount,
+        asset_amount.into(),
     )?;
 
     let gc_amount = asset_amount / state.exchange_rate;
-    {
+    
         _transfer(
-            deps.borrow_mut(), // Use the original `deps` variable
+            deps, // Use the original `deps` variable
             env.clone(),
             info.clone(),
             env.contract.address.clone(),
             info.sender.clone(),
             gc_amount,
         )?;
-    }
+    
 
     let resp = Response::new()
         .add_attribute("action", "buy_gc")
-        .add_attribute("amount", asset_amount);
+        .add_attribute("amount", asset_amount.to_string());
     Ok(resp)
 }
 

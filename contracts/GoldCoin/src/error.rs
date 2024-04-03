@@ -1,5 +1,7 @@
 use cosmwasm_std::{Addr, StdError, Uint128};
 use thiserror::Error;
+use cw_utils::PaymentError;
+
 
 #[derive(Error, Debug)]
 pub enum ContractError {
@@ -29,4 +31,7 @@ pub enum ContractError {
 
     #[error("Invalid amount")]
     InvalidAmount {},
+
+    #[error("Payment error: {0}")]
+    Payment(#[from] PaymentError),
 }
