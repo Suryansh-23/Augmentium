@@ -3,6 +3,7 @@ use cosmwasm_std::entry_point;
 use cosmwasm_std::{coins, Addr, Uint128};
 use cosmwasm_std::{BankMsg, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult};
 use cw_utils::must_pay;
+use serde::de;
 
 use crate::error::ContractError;
 use crate::msg::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg};
@@ -151,12 +152,10 @@ fn buy_gc(deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, Contra
     let denom = DENOM.load(deps.storage)?;
     let state = STATE.load(deps.storage)?;
 
-    let asset_amount = must_pay(&info, &denom)?.u128();
-
-    let cloned_deps = deps.into(); // Convert DepsMut into Deps
+    let asset_amount = must_pay(&info, &denom).unwrap();
 
     transfer_from(
-        cloned_deps, // Use the cloned `deps` variable
+        deps, // Use the cloned `deps` variable
         env.clone(),
         info.clone(),
         info.sender.clone(),
@@ -164,8 +163,10 @@ fn buy_gc(deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, Contra
         asset_amount.into(),
     )?;
 
-    let gc_amount = asset_amount / state.exchange_rate;
-    
+    let gc_amount = asset_amount / (state.exchange_rate);
+
+    // Convert DepsMut into Deps
+    {
         _transfer(
             deps, // Use the original `deps` variable
             env.clone(),
@@ -174,7 +175,7 @@ fn buy_gc(deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, Contra
             info.sender.clone(),
             gc_amount,
         )?;
-    
+    }
 
     let resp = Response::new()
         .add_attribute("action", "buy_gc")
