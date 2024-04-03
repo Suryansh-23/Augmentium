@@ -1,18 +1,14 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
-use cosmwasm_std::{coin, coins, Addr, Coin, QueryRequest, Uint128};
-use cosmwasm_std::{
-    BankMsg, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult, Uint256,
-};
-use cw_utils::must_pay;
+use cosmwasm_std::{coins, Addr, Uint128};
+use cosmwasm_std::{BankMsg, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult};
 
 use crate::error::ContractError;
 use crate::msg::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg};
-use crate::state::{self, State, DONATION_DENOM, STATE};
+use crate::state::{State, DONATION_DENOM, STATE};
 use cw2::set_contract_version;
-use std::borrow::{Borrow, BorrowMut};
+use std::borrow::BorrowMut;
 use std::collections::HashMap;
-use std::ops::Add;
 
 // version info for migration info
 const CONTRACT_NAME: &str = "crates.io:cw20-token";
@@ -61,6 +57,56 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     unimplemented!()
 }
 
+fn balance_of(deps: Deps, _env: Env, addr: Addr) -> Result<Uint128, ContractError> {
+    let state = STATE.load(deps.storage)?;
+    let balance = state.balances.get(&addr).cloned().unwrap_or_default();
+    Ok(balance)
+}
+
+fn allowance(deps: Deps, _env: Env, owner: Addr, spender: Addr) -> Result<Uint128, ContractError> {
+    let state = STATE.load(deps.storage)?;
+    let binding = HashMap::new();
+
+    let spender_allowances = state.allowances.get(&owner).unwrap_or(&binding);
+    let allowance = spender_allowances
+        .get(&spender)
+        .cloned()
+        .unwrap_or_default();
+
+    Ok(allowance)
+}
+
+fn get_total_supply(deps: Deps, _env: Env) -> Result<Uint128, ContractError> {
+    let state = STATE.load(deps.storage)?;
+
+    Ok(state.total_supply)
+}
+
+fn get_exchange_rate(deps: Deps, _env: Env) -> Result<Uint128, ContractError> {
+    let state = STATE.load(deps.storage)?;
+
+    Ok(state.exchange_rate)
+}
+
+fn set_exchange_rate(
+    deps: DepsMut,
+    _env: Env,
+    info: MessageInfo,
+    exchange_rate: Uint128,
+) -> Result<Response, ContractError> {
+    STATE.update(deps.storage, |mut state| -> Result<State, ContractError> {
+        if state.admin != info.sender {
+            return Err(ContractError::Unauthorized {});
+        }
+
+        state.exchange_rate = exchange_rate;
+
+        Ok(state)
+    })?;
+
+    Ok(Response::new().add_attribute("action", "set_exchange_rate"))
+}
+
 fn transfer(
     deps: DepsMut,
     env: Env,
@@ -104,18 +150,25 @@ fn buy_gc(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
+    asset_amount: Uint128,
 ) -> Result<Response, ContractError> {
-    let denom = DONATION_DENOM.load(deps.storage)?;
-    let price = cw_utils::must_pay(&info, &denom)?.u128();
-    let state = STATE.load(deps.storage)?;
-    let gc_amount = (price * state.exchange_rate.u128()) as u128;
+    // TODO!
 
-    let messages =  BankMsg::Send { to_address:state.admin.to_string() , amount: coins(price, &denom) };
-    transfer(deps, env, info, info.sender, gc_amount.into())?;
+    transfer_from(
+        deps.borrow_mut(),
+        env.clone(),
+        info.clone(),
+        info.sender.clone(),
+        env.contract.address.clone(),
+        asset_amount,
+    )?;
+
+    let state = STATE.load(deps.storage)?;
+    let gc_amount = asset_amount / state.exchange_rate;
 
     let resp = Response::new()
-            .add_message(messages)
-            .add_attribute("action", "buy_gc");
+        // .add_message(messages)
+        .add_attribute("action", "buy_gc");
 
     Ok(resp)
 }
@@ -126,19 +179,25 @@ fn redeem_gc(
     info: MessageInfo,
     gc_amount: Uint128,
 ) -> Result<Response, ContractError> {
-    let sender =  info.sender.clone();
+    let sender = info.sender.clone();
+
     let state = STATE.load(deps.storage)?;
     let denom = DONATION_DENOM.load(deps.storage)?;
-    let price = (gc_amount * state.exchange_rate);
-    let messages =  BankMsg::Send { to_address:state.admin.to_string() , amount: coins(price.u128(), &denom) };
-    _burn(deps, env, info, sender, gc_amount);
+    let price = gc_amount * state.exchange_rate;
+    let messages = BankMsg::Send {
+        to_address: state.admin.to_string(),
+        amount: coins(price.u128(), &denom),
+    };
+
+    _burn(deps, env, info, sender, gc_amount)?;
+
     Ok(Response::new()
-    .add_message(messages)
-    .add_attribute("action", "redeem_gc"))
+        .add_message(messages)
+        .add_attribute("action", "redeem_gc"))
 }
 
 fn transfer_from(
-    deps: DepsMut,
+    deps: &mut DepsMut,
     env: Env,
     info: MessageInfo,
     sender: Addr,

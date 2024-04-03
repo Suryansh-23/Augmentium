@@ -1,4 +1,4 @@
-use cosmwasm_std::{Addr, StdError, Uint128, Uint256};
+use cosmwasm_std::{Addr, StdError, Uint128};
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -24,4 +24,6 @@ pub enum ContractError {
     #[error("zero ammount : {balance:?}")]
     ZeroAmount { balance: Uint128 },
 
+    #[error("Invalid amount")]
+    InvalidAmount {},
 }
