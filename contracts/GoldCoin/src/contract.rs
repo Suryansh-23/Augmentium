@@ -154,6 +154,8 @@ fn buy_gc(deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, Contra
 
     let asset_amount = must_pay(&info, &denom).unwrap();
 
+
+
     transfer_from(
         deps, // Use the cloned `deps` variable
         env.clone(),
@@ -165,18 +167,7 @@ fn buy_gc(deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, Contra
 
     let gc_amount = asset_amount / (state.exchange_rate);
 
-    // Convert DepsMut into Deps
-    {
-        _transfer(
-            deps, // Use the original `deps` variable
-            env.clone(),
-            info.clone(),
-            env.contract.address.clone(),
-            info.sender.clone(),
-            gc_amount,
-        )?;
-    }
-
+    
     let resp = Response::new()
         .add_attribute("action", "buy_gc")
         .add_attribute("amount", asset_amount.to_string());
@@ -242,6 +233,8 @@ fn transfer_from(
                 })?;
 
         sender_allowances.insert(info.sender.clone(), allowance - amount);
+
+
 
         Ok(state)
     })?;
