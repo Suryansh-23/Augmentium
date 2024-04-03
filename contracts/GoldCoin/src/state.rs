@@ -2,7 +2,7 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
-use cosmwasm_std::{Addr, Uint256};
+use cosmwasm_std::{Addr, Uint128, Uint256};
 use cw_storage_plus::Item;
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
@@ -11,10 +11,10 @@ pub struct State {
     pub name: String,
     pub symbol: String,
     pub decimals: u8,
-    pub total_supply: Uint256,
-    pub balances: HashMap<Addr, Uint256>,
-    pub allowances: HashMap<Addr, HashMap<Addr, Uint256>>,
-    pub exchange_rate: Uint256,
+    pub total_supply: Uint128,
+    pub balances: HashMap<Addr, Uint128>,
+    pub allowances: HashMap<Addr, HashMap<Addr, Uint128>>,
+    pub exchange_rate: Uint128,
     pub asset: Addr,
 }
 
@@ -27,3 +27,4 @@ pub struct AllowanceStruct {
 */
 
 pub const STATE: Item<State> = Item::new("state");
+pub const DONATION_DENOM: Item<String> = Item::new("donation_denom");

@@ -1,6 +1,6 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
-use cosmwasm_std::Addr;
+use cosmwasm_std::{coin, coins, Addr, Coin, QueryRequest, Uint128};
 use cosmwasm_std::{
     BankMsg, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult, Uint256,
 };
@@ -8,10 +8,11 @@ use cw_utils::must_pay;
 
 use crate::error::ContractError;
 use crate::msg::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg};
-use crate::state::{State, STATE};
+use crate::state::{self, State, DONATION_DENOM, STATE};
 use cw2::set_contract_version;
 use std::borrow::{Borrow, BorrowMut};
 use std::collections::HashMap;
+use std::ops::Add;
 
 // version info for migration info
 const CONTRACT_NAME: &str = "crates.io:cw20-token";
@@ -65,7 +66,7 @@ fn transfer(
     env: Env,
     info: MessageInfo,
     recipient: Addr,
-    amount: Uint256,
+    amount: Uint128,
 ) -> Result<Response, ContractError> {
     _transfer(
         deps,
@@ -82,7 +83,7 @@ fn approve(
     _env: Env,
     info: MessageInfo,
     spender: Addr,
-    amount: Uint256,
+    amount: Uint128,
 ) -> Result<Response, ContractError> {
     STATE.update(deps.storage, |mut state| -> Result<State, ContractError> {
         let sender_allowances = state.allowances.get_mut(&info.sender).ok_or(
@@ -101,20 +102,39 @@ fn approve(
 
 fn buy_gc(
     deps: DepsMut,
-    _env: Env,
-    _info: MessageInfo,
-    asset_amount: Uint256,
+    env: Env,
+    info: MessageInfo,
 ) -> Result<Response, ContractError> {
-    unimplemented!()
+    let denom = DONATION_DENOM.load(deps.storage)?;
+    let price = cw_utils::must_pay(&info, &denom)?.u128();
+    let state = STATE.load(deps.storage)?;
+    let gc_amount = (price * state.exchange_rate.u128()) as u128;
+
+    let messages =  BankMsg::Send { to_address:state.admin.to_string() , amount: coins(price, &denom) };
+    transfer(deps, env, info, info.sender, gc_amount.into())?;
+
+    let resp = Response::new()
+            .add_message(messages)
+            .add_attribute("action", "buy_gc");
+
+    Ok(resp)
 }
 
 fn redeem_gc(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
-    gc_amount: Uint256,
+    gc_amount: Uint128,
 ) -> Result<Response, ContractError> {
-    Ok(Response::new().add_attribute("action", "redeem_gc"))
+    let sender =  info.sender.clone();
+    let state = STATE.load(deps.storage)?;
+    let denom = DONATION_DENOM.load(deps.storage)?;
+    let price = (gc_amount * state.exchange_rate);
+    let messages =  BankMsg::Send { to_address:state.admin.to_string() , amount: coins(price.u128(), &denom) };
+    _burn(deps, env, info, sender, gc_amount);
+    Ok(Response::new()
+    .add_message(messages)
+    .add_attribute("action", "redeem_gc"))
 }
 
 fn transfer_from(
@@ -123,7 +143,7 @@ fn transfer_from(
     info: MessageInfo,
     sender: Addr,
     recipient: Addr,
-    amount: Uint256,
+    amount: Uint128,
 ) -> Result<Response, ContractError> {
     let state = STATE.load(deps.storage)?;
     let allowance = state
@@ -168,7 +188,7 @@ fn _transfer(
     _info: MessageInfo,
     sender: Addr,
     recipient: Addr,
-    amount: Uint256,
+    amount: Uint128,
 ) -> Result<Response, ContractError> {
     STATE.update(deps.storage, |mut state| -> Result<State, ContractError> {
         let sender_bal = state.balances.get(&sender).cloned().ok_or(
@@ -202,7 +222,7 @@ fn _burn(
     _env: Env,
     _info: MessageInfo,
     sender: Addr,
-    amount: Uint256,
+    amount: Uint128,
 ) -> Result<Response, ContractError> {
     STATE.update(deps.storage, |mut state| -> Result<State, ContractError> {
         let sender_bal = state.balances.get(&sender).cloned().ok_or(

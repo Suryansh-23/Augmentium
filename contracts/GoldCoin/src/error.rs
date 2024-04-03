@@ -1,4 +1,4 @@
-use cosmwasm_std::{Addr, StdError, Uint256};
+use cosmwasm_std::{Addr, StdError, Uint128, Uint256};
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -16,8 +16,12 @@ pub enum ContractError {
     InvalidSenderOrRecipient { addr: Addr },
 
     #[error("current balance less than amount: {balance:?}")]
-    InsufficientBalance { balance: Uint256 },
+    InsufficientBalance { balance: Uint128 },
 
     #[error("current allowance less than amount: {addr:?}")]
     InsufficientAllowance { sender: Addr, addr: Addr },
+
+    #[error("zero ammount : {balance:?}")]
+    ZeroAmount { balance: Uint128 },
+
 }
