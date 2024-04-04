@@ -3,6 +3,7 @@ use thiserror::Error;
 use cw_utils::PaymentError;
 
 
+
 #[derive(Error, Debug)]
 pub enum ContractError {
     #[error("{0}")]

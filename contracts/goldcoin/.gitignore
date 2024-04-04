@@ -10,6 +10,7 @@
 
 # macOS
 .DS_Store
+.env
 
 # IDEs
 *.iml

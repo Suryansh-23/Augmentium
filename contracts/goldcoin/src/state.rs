@@ -2,7 +2,7 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
-use cosmwasm_std::{Addr, Uint128, Uint256};
+use cosmwasm_std::{Addr, Uint128};
 use cw_storage_plus::Item;
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
@@ -16,6 +16,7 @@ pub struct State {
     pub allowances: HashMap<Addr, HashMap<Addr, Uint128>>,
     pub exchange_rate: Uint128,
     pub asset: Addr,
+    pub denom: String,
 }
 
 /*
@@ -27,4 +28,4 @@ pub struct AllowanceStruct {
 */
 
 pub const STATE: Item<State> = Item::new("state");
-pub const DENOM: Item<String> = Item::new("DENOM");
+pub const DENOM: Item<String> = Item::new("denom");
