@@ -13,6 +13,7 @@ pub struct InstantiateMsg {
     pub _initial_supply: Uint128,
     pub _exchange_rate: Uint128,
     pub _asset: Addr,
+    pub _denom: String,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

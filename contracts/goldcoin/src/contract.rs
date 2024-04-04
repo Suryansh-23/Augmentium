@@ -35,7 +35,9 @@ pub fn instantiate(
         allowances: HashMap::<Addr, HashMap<Addr, Uint128>>::new(),
         exchange_rate: msg._exchange_rate,
         asset: msg._asset,
+        denom: msg._denom,
     };
+    
 
     STATE.save(deps.storage, &state)?;
 
@@ -102,7 +104,7 @@ fn get_exchange_rate(deps: Deps, _env: Env) -> Result<Uint128, StdError> {
 }
 
 fn set_exchange_rate(
-    deps: &mut  DepsMut,
+    deps: &mut DepsMut,
     _env: Env,
     info: MessageInfo,
     exchange_rate: Uint128,
@@ -159,11 +161,9 @@ fn approve(
     Ok(Response::new().add_attribute("action", "approve"))
 }
 
-fn buy_gc(deps: &mut DepsMut, env: Env, info: MessageInfo) -> Result<Response, ContractError> {
-    let denom = DENOM.load(deps.storage)?;
+fn buy_gc(deps: &mut DepsMut, env: Env, info: MessageInfo ) -> Result<Response, ContractError> {
     let state = STATE.load(deps.storage)?;
-
-    let asset_amount = must_pay(&info, &denom).unwrap();
+    let asset_amount = must_pay(&info, &state.denom).unwrap();
 
     transfer_from(
         deps, // Use the cloned `deps` variable
@@ -185,9 +185,11 @@ fn buy_gc(deps: &mut DepsMut, env: Env, info: MessageInfo) -> Result<Response, C
         gc_amount,
     )?;
 
+
     let resp = Response::new()
         .add_attribute("action", "buy_gc")
         .add_attribute("amount", asset_amount.to_string());
+
     Ok(resp)
 }
 
@@ -325,4 +327,97 @@ fn _burn(
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn migrate(_deps: DepsMut, _env: Env, _msg: MigrateMsg) -> StdResult<Response> {
     Ok(Response::default())
+}
+
+
+
+
+#[cfg(test)]
+mod tests {
+    use std::default;
+
+    use crate::helpers::CwTemplateContract;
+    use crate::msg::InstantiateMsg;
+    use cosmwasm_std::{Addr, Coin, Empty, Uint128};
+    use cw_multi_test::{App, AppBuilder, Contract, ContractWrapper, Executor};
+    use serde::de;
+
+    pub fn contract_template() -> Box<dyn Contract<Empty>> {
+        let contract = ContractWrapper::new(
+            crate::contract::execute,
+            crate::contract::instantiate,
+            crate::contract::query,
+        );
+        Box::new(contract)
+    }
+
+    const USER: &str = "USER";
+    const ADMIN: &str = "ADMIN";
+    const NATIVE_DENOM: &str = "uaum";
+
+    fn mock_app() -> App {
+        AppBuilder::new().build(|router, _, storage| {
+            router
+                .bank
+                .init_balance(
+                    storage,
+                    &Addr::unchecked(USER),
+                    vec![Coin {
+                        denom: NATIVE_DENOM.to_string(),
+                        amount: Uint128::new(69),
+                    }],
+                )
+                .unwrap();
+        })
+    }
+
+    fn proper_instantiate() -> (App, CwTemplateContract) {
+        let mut app = mock_app();
+        let cw_template_id = app.store_code(contract_template());
+
+        let msg = InstantiateMsg {
+            _admin: Some(ADMIN.to_string()),
+            _name: "GoldCoin".to_string(),
+            _symbol: "GC".to_string(),
+            _decimals: 6,
+            _initial_supply: Uint128::new(1000000),
+            _exchange_rate: Uint128::new(100),
+            _asset: Addr::unchecked("asset"),
+            _denom: "uaum".to_string(),
+        };
+        let cw_template_contract_addr = app
+            .instantiate_contract(
+                cw_template_id,
+                Addr::unchecked(USER),
+                &msg,
+                &[Coin {
+                    denom: NATIVE_DENOM.to_string(),
+                    amount: Uint128::new(10),
+                }],
+                "test",
+                None,
+            )
+            .unwrap();
+
+        let cw_template_contract = CwTemplateContract(cw_template_contract_addr);
+
+        (app, cw_template_contract)
+    }
+
+    mod count {
+        use super::*;
+        use crate::msg::ExecuteMsg;
+
+        #[test]
+        fn count() {
+            let (mut app, cw_template_contract) = proper_instantiate();
+
+            let msg = ExecuteMsg::BuyGC {  };
+            let cosmos_msg = cw_template_contract.call(msg).unwrap();
+            app.execute(Addr::unchecked(USER), cosmos_msg).unwrap();
+            
+            assert!(true)
+            
+        }
+    }
 }

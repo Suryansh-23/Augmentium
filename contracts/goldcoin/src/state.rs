@@ -16,6 +16,7 @@ pub struct State {
     pub allowances: HashMap<Addr, HashMap<Addr, Uint128>>,
     pub exchange_rate: Uint128,
     pub asset: Addr,
+    pub denom: String,
 }
 
 /*
@@ -27,4 +28,4 @@ pub struct AllowanceStruct {
 */
 
 pub const STATE: Item<State> = Item::new("state");
-pub const DENOM: Item<String> = Item::new("DENOM");
+pub const DENOM: Item<String> = Item::new("denom");

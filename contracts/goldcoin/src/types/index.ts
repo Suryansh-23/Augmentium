@@ -1,2 +1,2 @@
-export * as GoldCoinTypes from './GoldCoin.types';
-export * from './GoldCoin.client';
+export * as GoldcoinTypes from './Goldcoin.types';
+export * from './Goldcoin.client';

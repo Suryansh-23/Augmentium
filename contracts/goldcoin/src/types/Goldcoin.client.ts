@@ -6,8 +6,8 @@
 
 import { CosmWasmClient, SigningCosmWasmClient, ExecuteResult } from "@cosmjs/cosmwasm-stargate";
 import { Coin, StdFee } from "@cosmjs/amino";
-import {Addr, Uint128, InstantiateMsg, ExecuteMsg, QueryMsg} from "./GoldCoin.types";
-export interface GoldCoinReadOnlyInterface {
+import {Addr, Uint128, InstantiateMsg, ExecuteMsg, QueryMsg} from "./Goldcoin.types";
+export interface GoldcoinReadOnlyInterface {
   contractAddress: string;
   balanceOf: ({
     addr
@@ -24,7 +24,7 @@ export interface GoldCoinReadOnlyInterface {
   getTotalSupply: () => Promise<GetTotalSupplyResponse>;
   getExchangeRate: () => Promise<GetExchangeRateResponse>;
 }
-export class GoldCoinQueryClient implements GoldCoinReadOnlyInterface {
+export class GoldcoinQueryClient implements GoldcoinReadOnlyInterface {
   client: CosmWasmClient;
   contractAddress: string;
 
@@ -73,7 +73,7 @@ export class GoldCoinQueryClient implements GoldCoinReadOnlyInterface {
     });
   };
 }
-export interface GoldCoinInterface extends GoldCoinReadOnlyInterface {
+export interface GoldcoinInterface extends GoldcoinReadOnlyInterface {
   contractAddress: string;
   sender: string;
   transfer: ({
@@ -111,7 +111,7 @@ export interface GoldCoinInterface extends GoldCoinReadOnlyInterface {
     gcAmount: Uint128;
   }, _fee?: number | StdFee | "auto", _memo?: string, _funds?: Coin[]) => Promise<ExecuteResult>;
 }
-export class GoldCoinClient extends GoldCoinQueryClient implements GoldCoinInterface {
+export class GoldcoinClient extends GoldcoinQueryClient implements GoldcoinInterface {
   client: SigningCosmWasmClient;
   sender: string;
   contractAddress: string;
