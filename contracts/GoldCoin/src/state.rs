@@ -27,4 +27,4 @@ pub struct AllowanceStruct {
 */
 
 pub const STATE: Item<State> = Item::new("state");
-pub const DENOM: Item<String> = Item::new("AUM");
+pub const DENOM: Item<String> = Item::new("DENOM");
