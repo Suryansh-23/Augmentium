@@ -3,13 +3,12 @@ use cosmwasm_std::entry_point;
 use cosmwasm_std::{coins, Addr, Uint128};
 use cosmwasm_std::{BankMsg, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult};
 use cw_utils::must_pay;
-use serde::de;
 
 use crate::error::ContractError;
 use crate::msg::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg};
 use crate::state::{State, DENOM, STATE};
 use cw2::set_contract_version;
-use std::borrow::{Borrow, BorrowMut};
+use std::borrow::BorrowMut;
 use std::collections::HashMap;
 
 // version info for migration info
@@ -110,7 +109,7 @@ fn set_exchange_rate(
 }
 
 fn transfer(
-    deps: DepsMut,
+    deps: &mut DepsMut,
     env: Env,
     info: MessageInfo,
     recipient: Addr,
@@ -148,13 +147,11 @@ fn approve(
     Ok(Response::new().add_attribute("action", "approve"))
 }
 
-fn buy_gc(deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, ContractError> {
+fn buy_gc(deps: &mut DepsMut, env: Env, info: MessageInfo) -> Result<Response, ContractError> {
     let denom = DENOM.load(deps.storage)?;
     let state = STATE.load(deps.storage)?;
 
     let asset_amount = must_pay(&info, &denom).unwrap();
-
-
 
     transfer_from(
         deps, // Use the cloned `deps` variable
@@ -167,7 +164,15 @@ fn buy_gc(deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, Contra
 
     let gc_amount = asset_amount / (state.exchange_rate);
 
-    
+    _transfer(
+        deps.borrow_mut(), // Use the original `deps` variable
+        env.clone(),
+        info.clone(),
+        env.contract.address.clone(),
+        info.sender.clone(),
+        gc_amount,
+    )?;
+
     let resp = Response::new()
         .add_attribute("action", "buy_gc")
         .add_attribute("amount", asset_amount.to_string());
@@ -198,7 +203,7 @@ fn redeem_gc(
 }
 
 fn transfer_from(
-    deps: DepsMut,
+    deps: &mut DepsMut,
     env: Env,
     info: MessageInfo,
     sender: Addr,
@@ -234,8 +239,6 @@ fn transfer_from(
 
         sender_allowances.insert(info.sender.clone(), allowance - amount);
 
-
-
         Ok(state)
     })?;
 
@@ -245,7 +248,7 @@ fn transfer_from(
 }
 
 fn _transfer(
-    deps: DepsMut,
+    deps: &mut DepsMut,
     _env: Env,
     _info: MessageInfo,
     sender: Addr,
