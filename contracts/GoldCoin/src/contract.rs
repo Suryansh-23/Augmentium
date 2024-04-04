@@ -12,7 +12,7 @@ use std::borrow::BorrowMut;
 use std::collections::HashMap;
 
 // version info for migration info
-const CONTRACT_NAME: &str = "crates.io:cw20-token";
+const CONTRACT_NAME: &str = "crates.io:goldcoin";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -45,12 +45,19 @@ pub fn instantiate(
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn execute(
-    deps: DepsMut,
+   mut deps: DepsMut,
     env: Env,
     info: MessageInfo,
     msg: ExecuteMsg,
-) -> Result<Response, cw20_base::ContractError> {
-    unimplemented!()
+) -> Result<Response,ContractError> {
+    match msg{
+        ExecuteMsg::Transfer { recipient, amount } => transfer(&mut deps, env, info, recipient, amount), 
+        ExecuteMsg::Approve { spender, amount } => approve(&mut deps, env, info, spender, amount),
+        ExecuteMsg::SetExchangeRate { exchange_rate } => set_exchange_rate(&mut deps, env, info, exchange_rate),
+        ExecuteMsg::TransferFrom { sender, recipient, amount } => transfer_from(&mut deps, env, info, sender, recipient, amount),
+        ExecuteMsg::BuyGC {} => buy_gc(&mut deps, env, info),
+        ExecuteMsg::RedeemGC { gc_amount } => redeem_gc(&mut deps, env, info, gc_amount),
+    }
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -90,7 +97,7 @@ fn get_exchange_rate(deps: Deps, _env: Env) -> Result<Uint128, ContractError> {
 }
 
 fn set_exchange_rate(
-    deps: DepsMut,
+    deps: &mut  DepsMut,
     _env: Env,
     info: MessageInfo,
     exchange_rate: Uint128,
@@ -126,7 +133,7 @@ fn transfer(
 }
 
 fn approve(
-    deps: DepsMut,
+    deps: &mut DepsMut,
     _env: Env,
     info: MessageInfo,
     spender: Addr,
@@ -180,7 +187,7 @@ fn buy_gc(deps: &mut DepsMut, env: Env, info: MessageInfo) -> Result<Response, C
 }
 
 fn redeem_gc(
-    deps: DepsMut,
+    deps: &mut DepsMut,
     env: Env,
     info: MessageInfo,
     gc_amount: Uint128,
@@ -283,7 +290,7 @@ fn _transfer(
 }
 
 fn _burn(
-    deps: DepsMut,
+    deps: &mut DepsMut,
     _env: Env,
     _info: MessageInfo,
     sender: Addr,

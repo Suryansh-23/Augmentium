@@ -16,7 +16,7 @@ mod tests {
 
     const USER: &str = "USER";
     const ADMIN: &str = "ADMIN";
-    const NATIVE_DENOM: &str = "denom";
+    const NATIVE_DENOM: &str = "uaum";
 
     fn mock_app() -> App {
         AppBuilder::new().build(|router, _, storage| {
@@ -27,7 +27,7 @@ mod tests {
                     &Addr::unchecked(USER),
                     vec![Coin {
                         denom: NATIVE_DENOM.to_string(),
-                        amount: Uint128::new(1),
+                        amount: Uint128::new(69),
                     }],
                 )
                 .unwrap();
