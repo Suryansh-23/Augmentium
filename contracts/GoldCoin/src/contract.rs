@@ -3,13 +3,12 @@ use cosmwasm_std::entry_point;
 use cosmwasm_std::{coins, Addr, Uint128};
 use cosmwasm_std::{BankMsg, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult};
 use cw_utils::must_pay;
-use serde::de;
 
 use crate::error::ContractError;
 use crate::msg::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg};
 use crate::state::{State, DENOM, STATE};
 use cw2::set_contract_version;
-use std::borrow::{Borrow, BorrowMut};
+use std::borrow::BorrowMut;
 use std::collections::HashMap;
 
 // version info for migration info
@@ -153,7 +152,7 @@ fn buy_gc(deps: &mut DepsMut, env: Env, info: MessageInfo) -> Result<Response, C
     let state = STATE.load(deps.storage)?;
 
     let asset_amount = must_pay(&info, &denom).unwrap();
-    
+
     transfer_from(
         deps, // Use the cloned `deps` variable
         env.clone(),
@@ -162,7 +161,6 @@ fn buy_gc(deps: &mut DepsMut, env: Env, info: MessageInfo) -> Result<Response, C
         env.contract.address.clone(),
         asset_amount.into(),
     )?;
-
 
     let gc_amount = asset_amount / (state.exchange_rate);
 
@@ -240,8 +238,6 @@ fn transfer_from(
                 })?;
 
         sender_allowances.insert(info.sender.clone(), allowance - amount);
-
-
 
         Ok(state)
     })?;
