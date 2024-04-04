@@ -18,12 +18,36 @@ pub struct InstantiateMsg {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum ExecuteMsg {
-    Burn { address: Addr, amount: Uint256 },
+    Transfer {
+        recipient: Addr,
+        amount: Uint128,
+    },
+    Approve {
+        spender: Addr,
+        amount: Uint128,
+    },
+    SetExchangeRate {
+        exchange_rate: Uint128,
+    },
+    TransferFrom {
+        sender: Addr,
+        recipient: Addr,
+        amount: Uint128,
+    },
+    BuyGC {},
+    RedeemGC {
+        gc_amount: Uint128,
+    },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
-pub enum QueryMsg {}
+pub enum QueryMsg {
+    BalanceOf { addr: Addr },
+    Allowance { owner: Addr, spender: Addr },
+    GetTotalSupply {},
+    GetExchangeRate {},
+}
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct MigrateMsg {}
