@@ -1,7 +1,7 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
-use cosmwasm_std::{coins, Addr, Uint128};
-use cosmwasm_std::{BankMsg, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult};
+use cosmwasm_std::{coins, Addr, StdError, Uint128};
+use cosmwasm_std::{BankMsg, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult , to_json_binary, };
 use cw_utils::must_pay;
 
 use crate::error::ContractError;
@@ -21,7 +21,7 @@ pub fn instantiate(
     _env: Env,
     info: MessageInfo,
     msg: InstantiateMsg,
-) -> Result<Response, ContractError> {
+) -> Result<Response, StdError> {
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
     let admin = msg._admin.unwrap_or(info.sender.to_string());
     let validated_admin = deps.api.addr_validate(&admin)?;
@@ -62,16 +62,22 @@ pub fn execute(
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
-    unimplemented!()
+    match msg { 
+        QueryMsg::BalanceOf { addr } => to_json_binary(&balance_of(deps, _env, addr)?),
+        QueryMsg::Allowance { owner, spender } => to_json_binary(&allowance(deps, _env, owner, spender)?),
+        QueryMsg::GetTotalSupply {} => to_json_binary(&get_total_supply(deps, _env)?),
+        QueryMsg::GetExchangeRate {} => to_json_binary(&get_exchange_rate(deps, _env)?),
+    
+    }
 }
 
-fn balance_of(deps: Deps, _env: Env, addr: Addr) -> Result<Uint128, ContractError> {
+fn balance_of(deps: Deps, _env: Env, addr: Addr) -> Result<Uint128, StdError> {
     let state = STATE.load(deps.storage)?;
     let balance = state.balances.get(&addr).cloned().unwrap_or_default();
     Ok(balance)
 }
 
-fn allowance(deps: Deps, _env: Env, owner: Addr, spender: Addr) -> Result<Uint128, ContractError> {
+fn allowance(deps: Deps, _env: Env, owner: Addr, spender: Addr) -> Result<Uint128, StdError> {
     let state = STATE.load(deps.storage)?;
     let binding = HashMap::new();
 
@@ -84,13 +90,13 @@ fn allowance(deps: Deps, _env: Env, owner: Addr, spender: Addr) -> Result<Uint12
     Ok(allowance)
 }
 
-fn get_total_supply(deps: Deps, _env: Env) -> Result<Uint128, ContractError> {
+fn get_total_supply(deps: Deps, _env: Env) -> Result<Uint128, StdError> {
     let state = STATE.load(deps.storage)?;
 
     Ok(state.total_supply)
 }
 
-fn get_exchange_rate(deps: Deps, _env: Env) -> Result<Uint128, ContractError> {
+fn get_exchange_rate(deps: Deps, _env: Env) -> Result<Uint128, StdError> {
     let state = STATE.load(deps.storage)?;
 
     Ok(state.exchange_rate)
