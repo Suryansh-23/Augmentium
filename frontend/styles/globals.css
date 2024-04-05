@@ -25,6 +25,7 @@ html {
     background-color: black;
     font-family: "Atkinson", sans-serif;
     overflow-y: scroll;
+    scroll-behavior: smooth;
 }
 
 html,

@@ -49,7 +49,7 @@ const Hero = () => {
                             <p className="animated text-lg md:text-xl lg:text-2xl font-semibold opacity-75">
                                 Join the Future of Finance with
                             </p>
-                            <p className="animated text-4xl md:text-5xl lg:text-6xl font-bold uppercase text-black dark:text-white">
+                            <p className="animated text-4xl md:text-7xl lg:text-9xl font-bold uppercase text-black dark:text-white">
                                 GoldCoin
                             </p>
                             <p className="animated text-sm md:text-base lg:text-lg opacity-75">
@@ -64,7 +64,7 @@ const Hero = () => {
                                     Start Trading
                                 </a>
                                 <a
-                                    href="/why"
+                                    href="#why"
                                     className="py-2 px-4 truncate rounded text-xs md:text-sm lg:text-base border border-black/25 dark:border-white/25 hover:bg-black/5 hover:dark:bg-white/15 blend">
                                     Know More
                                 </a>
