@@ -1,32 +1,9 @@
-import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useEffect } from "react";
+import { LINKS, SITE } from "../lib/consts";
 import { cn } from "../lib/utils";
 import Container from "./Container"; // Import Container component from your project
-
-const SITE = {
-    TITLE: "GoldCoin",
-    AUTHOR: "Suryansh Chauhan",
-};
-
-const LINKS = [
-    {
-        TEXT: "Home",
-        HREF: "/",
-    },
-    {
-        TEXT: "Work",
-        HREF: "#work",
-    },
-    {
-        TEXT: "Blog",
-        HREF: "/blog",
-    },
-    {
-        TEXT: "Projects",
-        HREF: "/projects",
-    },
-];
+import Logo from "./Logo";
 
 const Header = () => {
     const pathname = usePathname();
@@ -48,8 +25,23 @@ const Header = () => {
             drawer?.classList.toggle("open");
             drawerButton?.classList.toggle("open");
         };
+        const onScroll = () => {
+            const header = document.getElementById("header");
+            if (!header) return;
 
+            if (window.scrollY > 0) {
+                header.classList.add("scrolled");
+            } else {
+                header.classList.remove("scrolled");
+            }
+        };
+
+        document.addEventListener("scroll", onScroll);
         initializeDrawerButton();
+
+        return () => {
+            removeEventListener("scroll", onScroll);
+        };
     }, []);
 
     return (
@@ -57,19 +49,7 @@ const Header = () => {
             <Container size="md">
                 <div className="relative h-full w-full">
                     <div className="absolute left-0 top-1/2 -translate-y-1/2 flex gap-1 font-semibold">
-                        <a
-                            href="/"
-                            className="flex gap-1 text-current hover:text-black dark:hover:text-white transition-colors duration-300 ease-in-out">
-                            <Image
-                                alt="GC"
-                                width="24"
-                                height="24"
-                                className="size-6 fill-current mx-2"
-                                title="GC"
-                                src="/gc.png"
-                            />
-                            <div>{SITE.TITLE}</div>
-                        </a>
+                        <Logo />
                     </div>
 
                     <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">

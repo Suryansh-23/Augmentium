@@ -1,17 +1,42 @@
 import type { NextPage } from "next";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 // import { useCount } from "../api/counter";
+import Features from "../components/Features";
+import Footer from "../components/Footer";
 import Header from "../components/Header";
 import Hero from "../components/Hero";
 
 const Home: NextPage = () => {
     // const { count, error, increase } = useCount();
     const [isLoading, setLoading] = useState(false);
+    useEffect(() => {
+        const animate = () => {
+            const animateElements = document.querySelectorAll(".animate");
+
+            animateElements.forEach((element, index) => {
+                setTimeout(() => {
+                    element.classList.add("show");
+                }, index * 150);
+            });
+        };
+
+        document.addEventListener("DOMContentLoaded", animate);
+
+        return () => {
+            document.removeEventListener("DOMContentLoaded", animate);
+        };
+    });
 
     return (
         <>
             <Header />
             <Hero />
+            <div className="relative w-full bg-white dark:bg-black">
+                <div className="mx-auto sm:w-full md:w-4/5 lg:w-3/4 p-5 space-y-24 pb-16">
+                    <Features />
+                </div>
+            </div>
+            <Footer />
         </>
         // <div className={styles.container}>
         //     <Head>

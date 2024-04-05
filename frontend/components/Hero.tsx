@@ -1,3 +1,4 @@
+import { motion } from "framer-motion";
 import BackgroundAnimation from "./BackgroundAnimation";
 import MeteorShower from "./MeteorShower";
 import TwinklingStars from "./TwinklingStars";
@@ -18,7 +19,11 @@ const Hero = () => {
                 </div>
             </div>
             <section className="relative h-screen w-full">
-                <div
+                <motion.div
+                    initial={{ opacity: 0, transform: "translateY(25px)" }}
+                    whileInView={{ opacity: 1, transform: "translateY(0)" }}
+                    transition={{ duration: 1 }}
+                    viewport={{ once: true }}
                     id="planetcont"
                     className="animate absolute inset-0 top-1/4 overflow-hidden show">
                     <div
@@ -32,36 +37,41 @@ const Hero = () => {
                                 className="w-full h-20 rounded-full bg-neutral-900/25 dark:bg-white/25 blur-3xl"></div>
                         </div>
                     </div>
-                </div>
-                <div className="animate absolute h-full w-full flex items-center justify-center show">
+                </motion.div>
+                <motion.div
+                    initial={{ opacity: 0, transform: "translateY(25px)" }}
+                    whileInView={{ opacity: 1, transform: "translateY(0)" }}
+                    transition={{ duration: 1, delay: 0.25 }}
+                    viewport={{ once: true }}
+                    className="animate absolute h-full w-full flex items-center justify-center show">
                     <div className="relative w-full h-full flex items-center justify-center">
                         <div className="p-5 text-center">
                             <p className="animated text-lg md:text-xl lg:text-2xl font-semibold opacity-75">
-                                Hello, I am Mark
+                                Join the Future of Finance with
                             </p>
-                            <p className="animated text-2xl md:text-3xl lg:text-4xl font-bold uppercase text-black dark:text-white">
-                                Software Engineer
+                            <p className="animated text-4xl md:text-5xl lg:text-6xl font-bold uppercase text-black dark:text-white">
+                                GoldCoin
                             </p>
                             <p className="animated text-sm md:text-base lg:text-lg opacity-75">
-                                Currently designing products for humans.
+                                Join the RWA revolution now.
                             </p>
                             <div
                                 id="ctaButtons"
                                 className="animated flex flex-wrap gap-4 justify-center mt-5">
                                 <a
-                                    href="/blog"
+                                    href="/trade"
                                     className="py-2 px-4 rounded truncate text-xs md:text-sm lg:text-base bg-black dark:bg-white text-white dark:text-black hover:opacity-75 blend">
-                                    Read my blog
+                                    Start Trading
                                 </a>
                                 <a
-                                    href="/work"
+                                    href="/why"
                                     className="py-2 px-4 truncate rounded text-xs md:text-sm lg:text-base border border-black/25 dark:border-white/25 hover:bg-black/5 hover:dark:bg-white/15 blend">
-                                    View my work
+                                    Know More
                                 </a>
                             </div>
                         </div>
                     </div>
-                </div>
+                </motion.div>
             </section>
         </>
     );
