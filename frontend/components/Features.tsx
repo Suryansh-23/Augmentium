@@ -2,7 +2,7 @@ import { motion } from "framer-motion";
 import { BarChart, PenLine } from "lucide-react";
 import Image from "next/image";
 import { cn } from "../lib/utils";
-import { Card } from "./Card";
+import { Card } from "./ui/Card";
 
 const Bars = () => {
     const variants = {
@@ -111,7 +111,7 @@ export default function Features() {
                 <div className="grid gap-4 px-10 md:grid-cols-2 md:gap-16">
                     <div>
                         <h1 className="lg:leading-tighter text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl xl:text-[3.4rem] 2xl:text-[3.75rem]">
-                            The Future of Stability: GoldCoin
+                            The Future of Stability: Augmentium
                         </h1>
                     </div>
                     <div className="flex flex-col items-start space-y-4">

@@ -1,5 +1,5 @@
 export const SITE = {
-    TITLE: "GoldCoin",
+    TITLE: "Augmentium",
     AUTHOR: "Suryansh Chauhan",
 };
 

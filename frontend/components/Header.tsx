@@ -4,10 +4,23 @@ import { LINKS, SITE } from "../lib/consts";
 import { cn } from "../lib/utils";
 import Container from "./Container"; // Import Container component from your project
 import Logo from "./Logo";
+import { useChain, useWallet } from "@cosmos-kit/react";
 
 const Header = () => {
     const pathname = usePathname();
     const subpath = pathname.match(/[^/]+/g);
+
+    const { username, connect, disconnect, wallet, openView } =
+        useChain("mantrachaintestnet");
+    const { status, mainWallet } = useWallet("keplr-extension");
+
+    useEffect(() => {
+        if (status === "Connected") {
+            console.log("Connected to Keplr wallet");
+            console.log("username:", username);
+            console.log("wallet:", mainWallet);
+        }
+    }, [status]);
 
     useEffect(() => {
         const initializeDrawerButton = () => {
@@ -74,12 +87,26 @@ const Header = () => {
                     </div>
 
                     <div className="buttons absolute right-0 top-1/2 -translate-y-1/2 flex gap-1">
-                        <a
-                            href="/search"
-                            aria-label={`Search blog posts and projects on ${SITE.TITLE}`}
+                        <button
+                            onClick={async () => {
+                                // openView();
+                                if (status !== "Connected") {
+                                    openView();
+                                } else {
+                                    disconnect();
+                                    console.log(
+                                        "Disconnected from Keplr wallet"
+                                    );
+                                }
+                            }}
+                            title={
+                                status !== "Connected"
+                                    ? "Connect Wallet"
+                                    : "Connected @ " + username
+                            }
                             className={cn(
                                 "hidden md:flex",
-                                "size-9 rounded-full p-2 items-center justify-center",
+                                "rounded-full p-2 px-4 items-center justify-center",
                                 "bg-transparent hover:bg-black/5 dark:hover:bg-white/20",
                                 "stroke-current hover:stroke-black hover:dark:stroke-white",
                                 "border border-black/10 dark:border-white/25",
@@ -89,28 +116,9 @@ const Header = () => {
                                     ? "pointer-events-none bg-black dark:bg-white text-white dark:text-black"
                                     : ""
                             )}>
-                            <svg className="size-full">
-                                <use href="/ui.svg#search"></use>
-                            </svg>
-                        </a>
-
-                        <button
-                            id="header-drawer-button"
-                            aria-label={`Toggle drawer open and closed`}
-                            className={cn(
-                                "flex md:hidden",
-                                "size-9 rounded-full p-2 items-center justify-center",
-                                "bg-transparent hover:bg-black/5 dark:hover:bg-white/20",
-                                "stroke-current hover:stroke-black hover:dark:stroke-white",
-                                "border border-black/10 dark:border-white/25",
-                                "transition-colors duration-300 ease-in-out"
-                            )}>
-                            <svg id="drawer-open" className="size-full">
-                                <use href="/ui.svg#menu"></use>
-                            </svg>
-                            <svg id="drawer-close" className="size-full">
-                                <use href="/ui.svg#x"></use>
-                            </svg>
+                            {status !== "Connected"
+                                ? "Connect Wallet"
+                                : "Disconnect"}
                         </button>
                     </div>
                 </div>

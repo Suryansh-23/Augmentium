@@ -50,7 +50,7 @@ const Hero = () => {
                                 Join the Future of Finance with
                             </p>
                             <p className="animated text-4xl md:text-7xl lg:text-9xl font-bold uppercase text-black dark:text-white">
-                                GoldCoin
+                                Augmentium
                             </p>
                             <p className="animated text-sm md:text-base lg:text-lg opacity-75">
                                 Join the RWA revolution now.
@@ -60,12 +60,12 @@ const Hero = () => {
                                 className="animated flex flex-wrap gap-4 justify-center mt-5">
                                 <a
                                     href="/trade"
-                                    className="py-2 px-4 rounded truncate text-xs md:text-sm lg:text-base bg-black dark:bg-white text-white dark:text-black hover:opacity-75 blend">
+                                    className="py-2 px-4 rounded-xl truncate text-xs md:text-sm lg:text-base bg-black dark:bg-white text-white dark:text-black hover:opacity-75 blend">
                                     Start Trading
                                 </a>
                                 <a
                                     href="#why"
-                                    className="py-2 px-4 truncate rounded text-xs md:text-sm lg:text-base border border-black/25 dark:border-white/25 hover:bg-black/5 hover:dark:bg-white/15 blend">
+                                    className="py-2 px-4 truncate rounded-xl text-xs md:text-sm lg:text-base border border-black/25 dark:border-white/25 hover:bg-black/5 hover:dark:bg-white/15 blend">
                                     Know More
                                 </a>
                             </div>
