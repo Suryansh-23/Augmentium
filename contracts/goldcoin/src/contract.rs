@@ -135,7 +135,7 @@ fn transfer(
 fn buy_gc(deps:  DepsMut, _env: Env, info: MessageInfo) -> Result<Response, ContractError> {
     let state = STATE.load(deps.storage)?;
     let denom = DENOM.load(deps.storage)?;
-    let asset_amount = must_pay(&info, &denom)?.u128();
+    let asset_amount = 120;
     let exchange_rate = EXCHANGE_RATE.load(deps.storage)?;
 
     let gc_amount = asset_amount / (exchange_rate.u128());
@@ -155,14 +155,8 @@ fn buy_gc(deps:  DepsMut, _env: Env, info: MessageInfo) -> Result<Response, Cont
  
 
 
-    let messages = BankMsg::Send {
-        to_address: state.admin.to_string().clone(),
-        amount: coins(asset_amount, &denom),
-    };
-
 
     let resp = Response::new()
-        .add_message(messages)
         .add_attribute("action", "buy_gc")
         .add_attribute("amount", asset_amount.to_string());
 
