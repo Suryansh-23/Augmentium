@@ -1,3 +1,5 @@
+
+
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{coins, Addr, StdError, Uint128};
@@ -5,7 +7,7 @@ use cosmwasm_std::{BankMsg, Binary, Deps, DepsMut, Env, MessageInfo, Response, S
 use cw_utils::must_pay;
 use crate::error::ContractError;
 use crate::msg::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg};
-use crate::state::{State, DENOM, STATE , BALANCES };
+use crate::state::{State, BALANCES, DENOM, STATE, TOTAL_SUPPLY , EXCHANGE_RATE};
 use cw2::set_contract_version;
 
 
@@ -28,15 +30,14 @@ pub fn instantiate(
         name: msg._name,
         symbol: msg._symbol,
         decimals: msg._decimals,
-        total_supply: msg._initial_supply,
-        exchange_rate: msg._exchange_rate,
         denom: msg._denom.clone(),
     };
     
-
     STATE.save(deps.storage, &state)?;
-    BALANCES.save(deps.storage,admin, &msg._initial_supply)?;
+    BALANCES.save(deps.storage,admin, &(msg._initial_supply))?;
     DENOM.save(deps.storage, &msg._denom)?;
+    TOTAL_SUPPLY.save(deps.storage, &msg._initial_supply)?;
+    EXCHANGE_RATE.save(deps.storage, &msg._exchange_rate)?;
     Ok(Response::new().add_attribute("action", "instantiate"))
 }
 
@@ -49,37 +50,35 @@ pub fn execute(
 ) -> Result<Response,ContractError> {
     match msg{
         ExecuteMsg::Transfer { recipient, amount } => transfer( deps, env, info, recipient, amount), 
-        ExecuteMsg::SetExchangeRate { exchange_rate } => set_exchange_rate(deps, env, info, exchange_rate),
-        ExecuteMsg::BuyGC {} => buy_gc(deps, env, info ),
-        ExecuteMsg::RedeemGC { gc_amount } => redeem_gc( deps, env, info, gc_amount),
+        ExecuteMsg::SetExchangeRate { exchange_rate } => set_exchange_rate(deps, env, info, Uint128::from(exchange_rate)),
+        ExecuteMsg::Buy {} => buy_gc(deps, env, info ),
+        ExecuteMsg::Redeem { gc_amount } => redeem_gc( deps, env, info, gc_amount),
     }
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg { 
-        QueryMsg::BalanceOf { addr } => to_json_binary(&balance_of(deps, _env, addr)?),
-        QueryMsg::GetTotalSupply {} => to_json_binary(&get_total_supply(deps, _env)?),
-        QueryMsg::GetExchangeRate {} => to_json_binary(&get_exchange_rate(deps, _env)?),
+        QueryMsg::BalanceOf { addr } => balance_of(deps, _env, addr),
+        QueryMsg::GetTotalSupply {} => get_total_supply(deps, _env),
+        QueryMsg::GetExchangeRate {} => get_exchange_rate(deps, _env)
     
     }
 }
 
-fn balance_of(deps: Deps, _env: Env, addr: Addr) -> Result<Uint128, StdError> {
+fn balance_of(deps: Deps, _env: Env, addr: Addr) -> StdResult<Binary> {
     let balance = BALANCES.load(deps.storage, addr.clone()).unwrap_or_default();
-    Ok(balance)
+    
+    to_json_binary(&balance)
+}
+fn get_total_supply(deps: Deps, _env: Env) -> StdResult<Binary> {
+    let total_supply = TOTAL_SUPPLY.load(deps.storage).unwrap_or_default();
+    to_json_binary(&total_supply)
 }
 
-
-
-fn get_total_supply(deps: Deps, _env: Env) -> Result<Uint128, StdError> {
-    let state = STATE.load(deps.storage)?;
-    Ok(state.total_supply)
-}
-
-fn get_exchange_rate(deps: Deps, _env: Env) -> Result<Uint128, StdError> {
-    let state = STATE.load(deps.storage)?;
-    Ok(state.exchange_rate)
+fn get_exchange_rate(deps: Deps, _env: Env) -> StdResult<Binary> {
+    let exchange_rate = EXCHANGE_RATE.load(deps.storage).unwrap_or_default();
+    to_json_binary(&exchange_rate)
 }
 
 fn set_exchange_rate(
@@ -88,14 +87,14 @@ fn set_exchange_rate(
     info: MessageInfo,
     exchange_rate: Uint128,
 ) -> Result<Response, ContractError> {
-    STATE.update(deps.storage, |mut state| -> Result<State, ContractError> {
+   let state = STATE.load(deps.storage)?;
+
+    EXCHANGE_RATE.update(deps.storage, |mut rate| -> Result<Uint128, ContractError> {
         if state.admin != info.sender {
             return Err(ContractError::Unauthorized {});
         }
-
-        state.exchange_rate = exchange_rate;
-
-        Ok(state)
+        rate = exchange_rate;
+        Ok(rate)
     })?;
 
     Ok(Response::new().add_attribute("action", "set_exchange_rate"))
@@ -137,8 +136,9 @@ fn buy_gc(deps:  DepsMut, _env: Env, info: MessageInfo) -> Result<Response, Cont
     let state = STATE.load(deps.storage)?;
     let denom = DENOM.load(deps.storage)?;
     let asset_amount = must_pay(&info, &denom)?.u128();
+    let exchange_rate = EXCHANGE_RATE.load(deps.storage)?;
 
-    let gc_amount = asset_amount / (state.exchange_rate.u128());
+    let gc_amount = asset_amount / (exchange_rate.u128());
 
     BALANCES.update(deps.storage,state.admin.clone() , |balance| -> Result<Uint128, ContractError> {
         let mut balance = balance.unwrap_or_default();
@@ -179,6 +179,7 @@ fn redeem_gc(
 
     let state = STATE.load(deps.storage)?;
     let denom = DENOM.load(deps.storage)?;
+    let exchange_rate = EXCHANGE_RATE.load(deps.storage)?;
 
     BALANCES.update(deps.storage, sender, |balance| -> Result<Uint128, ContractError> {
         let mut balance = balance.ok_or(ContractError::InvalidSenderOrRecipient {
@@ -193,7 +194,7 @@ fn redeem_gc(
         Ok(balance - gc_amount)
     })?;
 
-    let price = gc_amount * state.exchange_rate;
+    let price = gc_amount * exchange_rate;
     let messages = BankMsg::Send {
         to_address: state.admin.to_string(),
         amount: coins(price.u128(), &denom),
@@ -207,38 +208,36 @@ fn redeem_gc(
 }
 
 
-fn _transfer(
-    deps:  DepsMut,
-    _env: Env,
-    _info: MessageInfo,
-    sender: Addr,
-    recipient: Addr,
-    amount: Uint128,
-) -> Result<Response, ContractError> {
-    
-   BALANCES.update(deps.storage, sender.clone(), |balance| -> Result<Uint128, ContractError> {
-        let mut  balance = balance.ok_or(ContractError::InvalidSenderOrRecipient {
-            addr: sender.clone(),
-        })?;
+// fn _transfer_from(
+//     deps: DepsMut,
+//     _env: Env,
+//     _info: MessageInfo,
+//     sender: Addr,
+//     recipient: Addr,
+//     amount: Uint128,
+// ) -> Result<Response, ContractError> {
+//     BALANCES.update(deps.storage, sender.clone(), |balance| -> Result<Uint128, ContractError> {
+//         let mut balance = balance.ok_or(ContractError::InvalidSenderOrRecipient {
+//             addr: sender.clone(),
+//         })?;
 
-        if balance < amount {
-            return Err(ContractError::InsufficientBalance { balance });
-        }
+//         if balance < amount {
+//             return Err(ContractError::InsufficientBalance { balance });
+//         }
 
-        balance = balance -amount ; 
+//         balance = balance - amount;
+//         Ok(balance - amount)
+//     })?;
 
-        Ok(balance - amount)
-    })?;
+//     BALANCES.update(deps.storage, recipient.clone(), |balance| -> Result<Uint128, ContractError> {
+//         let mut balance = balance.unwrap_or_default();
+//         balance = balance + amount;
+//         Ok(balance + amount)
+//     })?;
 
-    BALANCES.update(deps.storage, recipient.clone(), |balance| -> Result<Uint128, ContractError> {
-        let mut  balance = balance.unwrap_or_default();
+//     Ok(Response::new().add_attribute("action", "_transfer_from"))
 
-        balance  = balance + amount;
-        Ok(balance + amount)
-    })?;
-   
-    Ok(Response::new().add_attribute("action", "_transfer"))
-}
+// }
 
 fn _burn(
     deps:  DepsMut,

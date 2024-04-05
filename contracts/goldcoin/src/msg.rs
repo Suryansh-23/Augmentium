@@ -26,13 +26,14 @@ pub enum ExecuteMsg {
     },
    
     SetExchangeRate {
-        exchange_rate: Uint128,
+        exchange_rate: u128,
     },
    
-    BuyGC {},
-    RedeemGC {
+    Buy {},
+    Redeem {
         gc_amount: Uint128,
     },
+
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
