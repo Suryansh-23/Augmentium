@@ -1,7 +1,6 @@
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-
 use cosmwasm_std::{Addr, Uint128};
 use cw_storage_plus::{Item, Map};
 
@@ -13,11 +12,9 @@ pub struct State {
     pub decimals: u8,
     pub total_supply: Uint128,
     pub exchange_rate: Uint128,
-    pub denom: String,
+    pub denom : String
+
 }
-
-
-
 /*
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct AllowanceStruct {

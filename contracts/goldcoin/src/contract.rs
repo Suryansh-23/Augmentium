@@ -7,7 +7,6 @@ use crate::error::ContractError;
 use crate::msg::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg};
 use crate::state::{State, DENOM, STATE , BALANCES };
 use cw2::set_contract_version;
-use std::borrow::BorrowMut;
 
 
 // version info for migration info
@@ -18,15 +17,14 @@ const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 pub fn instantiate(
     deps: DepsMut,
     _env: Env,
-    info: MessageInfo,
+    _info: MessageInfo,
     msg: InstantiateMsg,
 ) -> Result<Response, StdError> {
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
-    let admin = msg._admin.unwrap_or(info.sender.to_string());
-    let validated_admin = deps.api.addr_validate(&admin)?;
+    let admin = msg._admin;
 
     let state = State {
-        admin: validated_admin,
+        admin: admin.clone(),
         name: msg._name,
         symbol: msg._symbol,
         decimals: msg._decimals,
@@ -37,23 +35,23 @@ pub fn instantiate(
     
 
     STATE.save(deps.storage, &state)?;
-    BALANCES.save(deps.storage, info.sender, &msg._initial_supply)?;
+    BALANCES.save(deps.storage,admin, &msg._initial_supply)?;
     DENOM.save(deps.storage, &msg._denom)?;
     Ok(Response::new().add_attribute("action", "instantiate"))
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn execute(
-   mut deps: DepsMut,
+    deps: DepsMut,
     env: Env,
     info: MessageInfo,
     msg: ExecuteMsg,
 ) -> Result<Response,ContractError> {
     match msg{
-        ExecuteMsg::Transfer { recipient, amount } => transfer(&mut deps, env, info, recipient, amount), 
-        ExecuteMsg::SetExchangeRate { exchange_rate } => set_exchange_rate(&mut deps, env, info, exchange_rate),
-        ExecuteMsg::BuyGC {recipient} => buy_gc(&mut deps, env, info , recipient),
-        ExecuteMsg::RedeemGC { gc_amount } => redeem_gc(&mut deps, env, info, gc_amount),
+        ExecuteMsg::Transfer { recipient, amount } => transfer( deps, env, info, recipient, amount), 
+        ExecuteMsg::SetExchangeRate { exchange_rate } => set_exchange_rate(deps, env, info, exchange_rate),
+        ExecuteMsg::BuyGC {} => buy_gc(deps, env, info ),
+        ExecuteMsg::RedeemGC { gc_amount } => redeem_gc( deps, env, info, gc_amount),
     }
 }
 
@@ -76,18 +74,16 @@ fn balance_of(deps: Deps, _env: Env, addr: Addr) -> Result<Uint128, StdError> {
 
 fn get_total_supply(deps: Deps, _env: Env) -> Result<Uint128, StdError> {
     let state = STATE.load(deps.storage)?;
-
     Ok(state.total_supply)
 }
 
 fn get_exchange_rate(deps: Deps, _env: Env) -> Result<Uint128, StdError> {
     let state = STATE.load(deps.storage)?;
-
     Ok(state.exchange_rate)
 }
 
 fn set_exchange_rate(
-    deps: &mut DepsMut,
+    deps: DepsMut,
     _env: Env,
     info: MessageInfo,
     exchange_rate: Uint128,
@@ -106,45 +102,62 @@ fn set_exchange_rate(
 }
 
 fn transfer(
-    deps: &mut DepsMut,
-    env: Env,
+    deps:  DepsMut,
+    _env: Env,
     info: MessageInfo,
     recipient: Addr,
     amount: Uint128,
 ) -> Result<Response, ContractError> {
-    _transfer(
-        deps,
-        env,
-        info.clone(),
-        info.sender.clone(),
-        recipient.clone(),
-        amount,
-    )?;
+
+    let balance  = BALANCES.load(deps.storage, info.sender.clone()).unwrap_or_default();
+
+    if balance < amount {
+        return Err(ContractError::InsufficientBalance { balance });
+    }
+    
+    BALANCES.update(deps.storage,info.sender.clone() , |balance| -> Result<Uint128, ContractError> {
+        let mut balance = balance.unwrap_or_default();
+        balance = balance - Uint128::from(amount);
+        Ok(balance - Uint128::from(amount))
+    })?;
+
+
+    BALANCES.update(deps.storage , recipient , |balance| -> Result<Uint128, ContractError> {
+        let mut balance = balance.unwrap_or_default();
+        balance = balance + Uint128::from(amount);
+        Ok(balance + Uint128::from(amount))
+    })?;
 
     Ok(Response::new().add_attribute("action", "transfer"))
 }
 
 
 
-fn buy_gc(deps: &mut DepsMut, env: Env, info: MessageInfo ,recipient: Addr ) -> Result<Response, ContractError> {
+fn buy_gc(deps:  DepsMut, _env: Env, info: MessageInfo) -> Result<Response, ContractError> {
     let state = STATE.load(deps.storage)?;
     let denom = DENOM.load(deps.storage)?;
-    let asset_amount = must_pay(&info, &denom).unwrap();
+    let asset_amount = must_pay(&info, &denom)?.u128();
 
-    let gc_amount = asset_amount / (state.exchange_rate);
+    let gc_amount = asset_amount / (state.exchange_rate.u128());
 
-    _transfer(
-        deps.borrow_mut(), // Use the original `deps` variable
-        env.clone(),
-        info.clone(),
-        env.contract.address.clone(),
-        recipient,
-        gc_amount,
-    )?;
+    BALANCES.update(deps.storage,state.admin.clone() , |balance| -> Result<Uint128, ContractError> {
+        let mut balance = balance.unwrap_or_default();
+        balance = balance - Uint128::from(gc_amount);
+        Ok(balance - Uint128::from(gc_amount))
+    })?;
+
+
+    BALANCES.update(deps.storage , info.sender.clone() , |balance| -> Result<Uint128, ContractError> {
+        let mut balance = balance.unwrap_or_default();
+        balance = balance + Uint128::from(gc_amount);
+        Ok(balance + Uint128::from(gc_amount))
+    })?;
+ 
+
 
     let messages = BankMsg::Send {
-        to_address: env.contract.address.to_string().clone(),
-        amount: coins(asset_amount.u128(), &denom),
+        to_address: state.admin.to_string().clone(),
+        amount: coins(asset_amount, &denom),
     };
 
 
@@ -157,8 +170,8 @@ fn buy_gc(deps: &mut DepsMut, env: Env, info: MessageInfo ,recipient: Addr ) -> 
 }
 
 fn redeem_gc(
-    deps: &mut DepsMut,
-    env: Env,
+    deps:  DepsMut,
+    _env: Env,
     info: MessageInfo,
     gc_amount: Uint128,
 ) -> Result<Response, ContractError> {
@@ -166,13 +179,27 @@ fn redeem_gc(
 
     let state = STATE.load(deps.storage)?;
     let denom = DENOM.load(deps.storage)?;
+
+    BALANCES.update(deps.storage, sender, |balance| -> Result<Uint128, ContractError> {
+        let mut balance = balance.ok_or(ContractError::InvalidSenderOrRecipient {
+            addr: info.sender.clone(),
+        })?;
+
+        if balance < gc_amount {
+            return Err(ContractError::InsufficientBalance { balance });
+        }
+
+        balance = balance - gc_amount;
+        Ok(balance - gc_amount)
+    })?;
+
     let price = gc_amount * state.exchange_rate;
     let messages = BankMsg::Send {
         to_address: state.admin.to_string(),
         amount: coins(price.u128(), &denom),
     };
 
-    _burn(deps, env, info, sender, gc_amount)?;
+  
 
     Ok(Response::new()
         .add_message(messages)
@@ -181,16 +208,16 @@ fn redeem_gc(
 
 
 fn _transfer(
-    deps: &mut DepsMut,
+    deps:  DepsMut,
     _env: Env,
     _info: MessageInfo,
     sender: Addr,
     recipient: Addr,
     amount: Uint128,
 ) -> Result<Response, ContractError> {
-
+    
    BALANCES.update(deps.storage, sender.clone(), |balance| -> Result<Uint128, ContractError> {
-        let balance = balance.ok_or(ContractError::InvalidSenderOrRecipient {
+        let mut  balance = balance.ok_or(ContractError::InvalidSenderOrRecipient {
             addr: sender.clone(),
         })?;
 
@@ -198,11 +225,15 @@ fn _transfer(
             return Err(ContractError::InsufficientBalance { balance });
         }
 
+        balance = balance -amount ; 
+
         Ok(balance - amount)
     })?;
 
     BALANCES.update(deps.storage, recipient.clone(), |balance| -> Result<Uint128, ContractError> {
-        let balance = balance.unwrap_or_default();
+        let mut  balance = balance.unwrap_or_default();
+
+        balance  = balance + amount;
         Ok(balance + amount)
     })?;
    
@@ -210,14 +241,14 @@ fn _transfer(
 }
 
 fn _burn(
-    deps: &mut DepsMut,
+    deps:  DepsMut,
     _env: Env,
     _info: MessageInfo,
     sender: Addr,
     amount: Uint128,
 ) -> Result<Response, ContractError> {
    BALANCES.update(deps.storage, sender.clone(), |balance| -> Result<Uint128, ContractError> {
-        let balance = balance.ok_or(ContractError::InvalidSenderOrRecipient {
+        let mut balance = balance.ok_or(ContractError::InvalidSenderOrRecipient {
             addr: sender.clone(),
         })?;
 
@@ -225,6 +256,7 @@ fn _burn(
             return Err(ContractError::InsufficientBalance { balance });
         }
 
+        balance = balance - amount ; 
         Ok(balance - amount)
     })?;
 
@@ -235,8 +267,6 @@ fn _burn(
 pub fn migrate(_deps: DepsMut, _env: Env, _msg: MigrateMsg) -> StdResult<Response> {
     Ok(Response::default())
 }
-
-
 
 
 // #[cfg(test)]

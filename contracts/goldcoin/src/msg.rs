@@ -1,4 +1,4 @@
-use std::ops::Add;
+
 
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -8,7 +8,7 @@ use cosmwasm_std::{Addr, Uint128};
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub struct InstantiateMsg {
-    pub _admin: Option<String>,
+    pub _admin: Addr,
     pub _name: String,
     pub _symbol: String,
     pub _decimals: u8,
@@ -29,9 +29,7 @@ pub enum ExecuteMsg {
         exchange_rate: Uint128,
     },
    
-    BuyGC {
-        recipient : Addr,
-    },
+    BuyGC {},
     RedeemGC {
         gc_amount: Uint128,
     },
