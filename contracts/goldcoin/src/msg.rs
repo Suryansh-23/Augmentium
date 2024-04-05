@@ -1,3 +1,5 @@
+use std::ops::Add;
+
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -27,7 +29,9 @@ pub enum ExecuteMsg {
         exchange_rate: Uint128,
     },
    
-    BuyGC {},
+    BuyGC {
+        recipient : Addr,
+    },
     RedeemGC {
         gc_amount: Uint128,
     },

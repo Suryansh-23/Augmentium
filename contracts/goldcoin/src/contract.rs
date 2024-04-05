@@ -52,7 +52,7 @@ pub fn execute(
     match msg{
         ExecuteMsg::Transfer { recipient, amount } => transfer(&mut deps, env, info, recipient, amount), 
         ExecuteMsg::SetExchangeRate { exchange_rate } => set_exchange_rate(&mut deps, env, info, exchange_rate),
-        ExecuteMsg::BuyGC {} => buy_gc(&mut deps, env, info),
+        ExecuteMsg::BuyGC {recipient} => buy_gc(&mut deps, env, info , recipient),
         ExecuteMsg::RedeemGC { gc_amount } => redeem_gc(&mut deps, env, info, gc_amount),
     }
 }
@@ -119,14 +119,14 @@ fn transfer(
         info.sender.clone(),
         recipient.clone(),
         amount,
-    );
+    )?;
 
     Ok(Response::new().add_attribute("action", "transfer"))
 }
 
 
 
-fn buy_gc(deps: &mut DepsMut, env: Env, info: MessageInfo ) -> Result<Response, ContractError> {
+fn buy_gc(deps: &mut DepsMut, env: Env, info: MessageInfo ,recipient: Addr ) -> Result<Response, ContractError> {
     let state = STATE.load(deps.storage)?;
     let denom = DENOM.load(deps.storage)?;
     let asset_amount = must_pay(&info, &denom).unwrap();
@@ -138,12 +138,18 @@ fn buy_gc(deps: &mut DepsMut, env: Env, info: MessageInfo ) -> Result<Response, 
         env.clone(),
         info.clone(),
         env.contract.address.clone(),
-        info.sender.clone(),
+        recipient,
         gc_amount,
     )?;
 
+    let messages = BankMsg::Send {
+        to_address: env.contract.address.to_string().clone(),
+        amount: coins(asset_amount.u128(), &denom),
+    };
+
 
     let resp = Response::new()
+        .add_message(messages)
         .add_attribute("action", "buy_gc")
         .add_attribute("amount", asset_amount.to_string());
 
