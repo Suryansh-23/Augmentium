@@ -7,7 +7,7 @@ const TwinkleStar = () => {
             // Clone the twinkle star template and set its attributes.
             const twinkleStar = document
                 .getElementById("twinkle-star")
-                ?.cloneNode(true);
+                ?.cloneNode(true) as HTMLElement;
             if (!twinkleStar) return;
 
             twinkleStar.style.position = "absolute";
@@ -16,9 +16,9 @@ const TwinkleStar = () => {
             twinkleStar.style.top =
                 Math.floor(Math.random() * (window.innerHeight / 3)) + "px";
             twinkleStar.style.width =
-                window.innerWidth < 768
+                (window.innerWidth < 768
                     ? Math.floor(Math.random() * (15 - 7.5 + 1) + 7.5)
-                    : Math.floor(Math.random() * (30 - 15 + 1) + 15) + "px";
+                    : Math.floor(Math.random() * (30 - 15 + 1) + 15)) + "px";
             twinkleStar.style.height = twinkleStar.style.width;
             twinkleStar.classList.add("twinkle");
 
