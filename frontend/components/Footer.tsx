@@ -1,9 +1,9 @@
-import { motion } from "framer-motion";
+import { Link } from "lucide-react";
 import { useEffect } from "react";
 import { SITE, SOCIALS } from "../lib/consts";
+import Animated from "./Animated";
 import Container from "./Container";
 import Logo from "./Logo";
-import Animated from "./Animated";
 
 const Footer = () => {
     const goBackToTop = (event: MouseEvent) => {
@@ -93,29 +93,29 @@ const Footer = () => {
                         <div className="h-full grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <div className="order-2 sm:order-1 flex flex-col items-center justify-center sm:items-start">
                                 <div className="backlinks flex flex-row gap-x-2">
-                                    <a
+                                    <Link
                                         href="/#hero"
                                         className="text-current hover:text-black dark:hover:text-white transition-colors duration-300 ease-in-out">
                                         Home
-                                    </a>
+                                    </Link>
                                     |
-                                    <a
+                                    <Link
                                         href="/#why"
                                         className="text-current hover:text-black dark:hover:text-white transition-colors duration-300 ease-in-out">
                                         Why?
-                                    </a>
+                                    </Link>
                                     |
-                                    <a
+                                    <Link
                                         href="/#learn"
                                         className="text-current hover:text-black dark:hover:text-white transition-colors duration-300 ease-in-out">
                                         Learn
-                                    </a>
+                                    </Link>
                                     |
-                                    <a
+                                    <Link
                                         href="/#trade"
                                         className="text-current hover:text-black dark:hover:text-white transition-colors duration-300 ease-in-out">
                                         Trade
-                                    </a>
+                                    </Link>
                                 </div>
                                 <div className="text-sm mt-2">
                                     &copy; 2024 | All rights reserved
