@@ -14,13 +14,6 @@ export interface GoldcoinReadOnlyInterface {
   }: {
     addr: Addr;
   }) => Promise<BalanceOfResponse>;
-  allowance: ({
-    owner,
-    spender
-  }: {
-    owner: Addr;
-    spender: Addr;
-  }) => Promise<AllowanceResponse>;
   getTotalSupply: () => Promise<GetTotalSupplyResponse>;
   getExchangeRate: () => Promise<GetExchangeRateResponse>;
 }
@@ -32,7 +25,6 @@ export class GoldcoinQueryClient implements GoldcoinReadOnlyInterface {
     this.client = client;
     this.contractAddress = contractAddress;
     this.balanceOf = this.balanceOf.bind(this);
-    this.allowance = this.allowance.bind(this);
     this.getTotalSupply = this.getTotalSupply.bind(this);
     this.getExchangeRate = this.getExchangeRate.bind(this);
   }
@@ -45,20 +37,6 @@ export class GoldcoinQueryClient implements GoldcoinReadOnlyInterface {
     return this.client.queryContractSmart(this.contractAddress, {
       balance_of: {
         addr
-      }
-    });
-  };
-  allowance = async ({
-    owner,
-    spender
-  }: {
-    owner: Addr;
-    spender: Addr;
-  }): Promise<AllowanceResponse> => {
-    return this.client.queryContractSmart(this.contractAddress, {
-      allowance: {
-        owner,
-        spender
       }
     });
   };
@@ -83,29 +61,13 @@ export interface GoldcoinInterface extends GoldcoinReadOnlyInterface {
     amount: Uint128;
     recipient: Addr;
   }, _fee?: number | StdFee | "auto", _memo?: string, _funds?: Coin[]) => Promise<ExecuteResult>;
-  approve: ({
-    amount,
-    spender
-  }: {
-    amount: Uint128;
-    spender: Addr;
-  }, _fee?: number | StdFee | "auto", _memo?: string, _funds?: Coin[]) => Promise<ExecuteResult>;
   setExchangeRate: ({
     exchangeRate
   }: {
-    exchangeRate: Uint128;
+    exchangeRate: number;
   }, _fee?: number | StdFee | "auto", _memo?: string, _funds?: Coin[]) => Promise<ExecuteResult>;
-  transferFrom: ({
-    amount,
-    recipient,
-    sender
-  }: {
-    amount: Uint128;
-    recipient: Addr;
-    sender: Addr;
-  }, _fee?: number | StdFee | "auto", _memo?: string, _funds?: Coin[]) => Promise<ExecuteResult>;
-  buyGC: (_fee?: number | StdFee | "auto", _memo?: string, _funds?: Coin[]) => Promise<ExecuteResult>;
-  redeemGC: ({
+  buy: (_fee?: number | StdFee | "auto", _memo?: string, _funds?: Coin[]) => Promise<ExecuteResult>;
+  redeem: ({
     gcAmount
   }: {
     gcAmount: Uint128;
@@ -122,11 +84,9 @@ export class GoldcoinClient extends GoldcoinQueryClient implements GoldcoinInter
     this.sender = sender;
     this.contractAddress = contractAddress;
     this.transfer = this.transfer.bind(this);
-    this.approve = this.approve.bind(this);
     this.setExchangeRate = this.setExchangeRate.bind(this);
-    this.transferFrom = this.transferFrom.bind(this);
-    this.buyGC = this.buyGC.bind(this);
-    this.redeemGC = this.redeemGC.bind(this);
+    this.buy = this.buy.bind(this);
+    this.redeem = this.redeem.bind(this);
   }
 
   transfer = async ({
@@ -143,24 +103,10 @@ export class GoldcoinClient extends GoldcoinQueryClient implements GoldcoinInter
       }
     }, _fee, _memo, _funds);
   };
-  approve = async ({
-    amount,
-    spender
-  }: {
-    amount: Uint128;
-    spender: Addr;
-  }, _fee: number | StdFee | "auto" = "auto", _memo?: string, _funds?: Coin[]): Promise<ExecuteResult> => {
-    return await this.client.execute(this.sender, this.contractAddress, {
-      approve: {
-        amount,
-        spender
-      }
-    }, _fee, _memo, _funds);
-  };
   setExchangeRate = async ({
     exchangeRate
   }: {
-    exchangeRate: Uint128;
+    exchangeRate: number;
   }, _fee: number | StdFee | "auto" = "auto", _memo?: string, _funds?: Coin[]): Promise<ExecuteResult> => {
     return await this.client.execute(this.sender, this.contractAddress, {
       set_exchange_rate: {
@@ -168,35 +114,18 @@ export class GoldcoinClient extends GoldcoinQueryClient implements GoldcoinInter
       }
     }, _fee, _memo, _funds);
   };
-  transferFrom = async ({
-    amount,
-    recipient,
-    sender
-  }: {
-    amount: Uint128;
-    recipient: Addr;
-    sender: Addr;
-  }, _fee: number | StdFee | "auto" = "auto", _memo?: string, _funds?: Coin[]): Promise<ExecuteResult> => {
+  buy = async (_fee: number | StdFee | "auto" = "auto", _memo?: string, _funds?: Coin[]): Promise<ExecuteResult> => {
     return await this.client.execute(this.sender, this.contractAddress, {
-      transfer_from: {
-        amount,
-        recipient,
-        sender
-      }
+      buy: {}
     }, _fee, _memo, _funds);
   };
-  buyGC = async (_fee: number | StdFee | "auto" = "auto", _memo?: string, _funds?: Coin[]): Promise<ExecuteResult> => {
-    return await this.client.execute(this.sender, this.contractAddress, {
-      buy_g_c: {}
-    }, _fee, _memo, _funds);
-  };
-  redeemGC = async ({
+  redeem = async ({
     gcAmount
   }: {
     gcAmount: Uint128;
   }, _fee: number | StdFee | "auto" = "auto", _memo?: string, _funds?: Coin[]): Promise<ExecuteResult> => {
     return await this.client.execute(this.sender, this.contractAddress, {
-      redeem_g_c: {
+      redeem: {
         gc_amount: gcAmount
       }
     }, _fee, _memo, _funds);

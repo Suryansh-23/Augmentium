@@ -1,9 +1,9 @@
 export type Addr = string;
 export type Uint128 = string;
 export interface InstantiateMsg {
-  _admin?: string | null;
-  _asset: Addr;
+  _admin: Addr;
   _decimals: number;
+  _denom: string;
   _exchange_rate: Uint128;
   _initial_supply: Uint128;
   _name: string;
@@ -15,35 +15,19 @@ export type ExecuteMsg = {
     recipient: Addr;
   };
 } | {
-  approve: {
-    amount: Uint128;
-    spender: Addr;
-  };
-} | {
   set_exchange_rate: {
-    exchange_rate: Uint128;
+    exchange_rate: number;
   };
 } | {
-  transfer_from: {
-    amount: Uint128;
-    recipient: Addr;
-    sender: Addr;
-  };
+  buy: {};
 } | {
-  buy_g_c: {};
-} | {
-  redeem_g_c: {
+  redeem: {
     gc_amount: Uint128;
   };
 };
 export type QueryMsg = {
   balance_of: {
     addr: Addr;
-  };
-} | {
-  allowance: {
-    owner: Addr;
-    spender: Addr;
   };
 } | {
   get_total_supply: {};
