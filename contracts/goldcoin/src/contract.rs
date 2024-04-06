@@ -1,14 +1,16 @@
+use std::env;
+
+use crate::error::ContractError;
+use crate::msg::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg};
+use crate::state::{State, BALANCES, DENOM, EXCHANGE_RATE, STATE, TOTAL_SUPPLY};
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{coins, Addr, StdError, Uint128};
-use cosmwasm_std::{BankMsg, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult , to_json_binary, };
-use cw_utils::must_pay;
-use crate::error::ContractError;
-use crate::msg::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg};
-use crate::state::{State, DENOM, STATE};
+use cosmwasm_std::{
+    to_json_binary, BankMsg, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult,
+};
 use cw2::set_contract_version;
-use std::borrow::BorrowMut;
-use std::collections::HashMap;
+use cw_utils::must_pay;
 
 // version info for migration info
 const CONTRACT_NAME: &str = "crates.io:goldcoin";
@@ -17,174 +19,150 @@ const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
     deps: DepsMut,
-    _env: Env,
-    info: MessageInfo,
+    env: Env,
+    _info: MessageInfo,
     msg: InstantiateMsg,
 ) -> Result<Response, StdError> {
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
-    let admin = msg._admin.unwrap_or(info.sender.to_string());
-    let validated_admin = deps.api.addr_validate(&admin)?;
-
+    let admin = env.contract.address;
     let state = State {
-        admin: validated_admin,
-        name: msg._name,
-        symbol: msg._symbol,
-        decimals: msg._decimals,
-        total_supply: msg._initial_supply,
-        balances: HashMap::<Addr, Uint128>::new(),
-        allowances: HashMap::<Addr, HashMap<Addr, Uint128>>::new(),
-        exchange_rate: msg._exchange_rate,
-        asset: msg._asset,
-        denom: msg._denom,
+        admin: admin.clone(),
+        name: msg.name,
+        symbol: msg.symbol,
+        decimals: msg.decimals,
+        denom: msg.denom.clone(),
     };
-    
 
     STATE.save(deps.storage, &state)?;
-
+    BALANCES.save(deps.storage, admin, &(msg.initial_supply))?;
+    DENOM.save(deps.storage, &msg.denom)?;
+    TOTAL_SUPPLY.save(deps.storage, &msg.initial_supply)?;
+    EXCHANGE_RATE.save(deps.storage, &msg.exchange_rate)?;
     Ok(Response::new().add_attribute("action", "instantiate"))
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn execute(
-   mut deps: DepsMut,
+    deps: DepsMut,
     env: Env,
     info: MessageInfo,
     msg: ExecuteMsg,
-) -> Result<Response,ContractError> {
-    match msg{
-        ExecuteMsg::Transfer { recipient, amount } => transfer(&mut deps, env, info, recipient, amount), 
-        ExecuteMsg::Approve { spender, amount } => approve(&mut deps, env, info, spender, amount),
-        ExecuteMsg::SetExchangeRate { exchange_rate } => set_exchange_rate(&mut deps, env, info, exchange_rate),
-        ExecuteMsg::TransferFrom { sender, recipient, amount } => transfer_from(&mut deps, env, info, sender, recipient, amount),
-        ExecuteMsg::BuyGC {} => buy_gc(&mut deps, env, info),
-        ExecuteMsg::RedeemGC { gc_amount } => redeem_gc(&mut deps, env, info, gc_amount),
+) -> Result<Response, ContractError> {
+    match msg {
+        ExecuteMsg::Transfer { recipient, amount } => transfer(deps, env, info, recipient, amount),
+        ExecuteMsg::SetExchangeRate { exchange_rate } => {
+            set_exchange_rate(deps, env, info, Uint128::from(exchange_rate))
+        }
+        ExecuteMsg::Buy {} => buy_gc(deps, env, info),
+        ExecuteMsg::Redeem { gc_amount } => redeem_gc(deps, env, info, gc_amount),
     }
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
-    match msg { 
-        QueryMsg::BalanceOf { addr } => to_json_binary(&balance_of(deps, _env, addr)?),
-        QueryMsg::Allowance { owner, spender } => to_json_binary(&allowance(deps, _env, owner, spender)?),
-        QueryMsg::GetTotalSupply {} => to_json_binary(&get_total_supply(deps, _env)?),
-        QueryMsg::GetExchangeRate {} => to_json_binary(&get_exchange_rate(deps, _env)?),
-    
+    match msg {
+        QueryMsg::BalanceOf { addr } => balance_of(deps, _env, addr),
+        QueryMsg::GetTotalSupply {} => get_total_supply(deps, _env),
+        QueryMsg::GetExchangeRate {} => get_exchange_rate(deps, _env),
     }
 }
 
-fn balance_of(deps: Deps, _env: Env, addr: Addr) -> Result<Uint128, StdError> {
-    let state = STATE.load(deps.storage)?;
-    let balance = state.balances.get(&addr).cloned().unwrap_or_default();
-    Ok(balance)
-}
-
-fn allowance(deps: Deps, _env: Env, owner: Addr, spender: Addr) -> Result<Uint128, StdError> {
-    let state = STATE.load(deps.storage)?;
-    let binding = HashMap::new();
-
-    let spender_allowances = state.allowances.get(&owner).unwrap_or(&binding);
-    let allowance = spender_allowances
-        .get(&spender)
-        .cloned()
+fn balance_of(deps: Deps, _env: Env, addr: Addr) -> StdResult<Binary> {
+    let balance = BALANCES
+        .load(deps.storage, addr.clone())
         .unwrap_or_default();
 
-    Ok(allowance)
+    to_json_binary(&balance)
+}
+fn get_total_supply(deps: Deps, _env: Env) -> StdResult<Binary> {
+    let total_supply = TOTAL_SUPPLY.load(deps.storage).unwrap_or_default();
+    to_json_binary(&total_supply)
 }
 
-fn get_total_supply(deps: Deps, _env: Env) -> Result<Uint128, StdError> {
-    let state = STATE.load(deps.storage)?;
-
-    Ok(state.total_supply)
-}
-
-fn get_exchange_rate(deps: Deps, _env: Env) -> Result<Uint128, StdError> {
-    let state = STATE.load(deps.storage)?;
-
-    Ok(state.exchange_rate)
+fn get_exchange_rate(deps: Deps, _env: Env) -> StdResult<Binary> {
+    let exchange_rate = EXCHANGE_RATE.load(deps.storage).unwrap_or_default();
+    to_json_binary(&exchange_rate)
 }
 
 fn set_exchange_rate(
-    deps: &mut DepsMut,
+    deps: DepsMut,
     _env: Env,
     info: MessageInfo,
     exchange_rate: Uint128,
 ) -> Result<Response, ContractError> {
-    STATE.update(deps.storage, |mut state| -> Result<State, ContractError> {
-        if state.admin != info.sender {
-            return Err(ContractError::Unauthorized {});
-        }
 
-        state.exchange_rate = exchange_rate;
-
-        Ok(state)
+    EXCHANGE_RATE.update(deps.storage, |_rate| -> Result<Uint128, ContractError> {
+        Ok(exchange_rate)
     })?;
 
     Ok(Response::new().add_attribute("action", "set_exchange_rate"))
 }
 
 fn transfer(
-    deps: &mut DepsMut,
-    env: Env,
+    deps: DepsMut,
+    _env: Env,
     info: MessageInfo,
     recipient: Addr,
     amount: Uint128,
 ) -> Result<Response, ContractError> {
-    _transfer(
-        deps,
-        env,
-        info.clone(),
+    let balance = BALANCES
+        .load(deps.storage, info.sender.clone())
+        .unwrap_or_default();
+
+    if balance < amount {
+        return Err(ContractError::InsufficientBalance { balance });
+    }
+
+    BALANCES.update(
+        deps.storage,
         info.sender.clone(),
-        recipient.clone(),
-        amount,
-    )
+        |balance| -> Result<Uint128, ContractError> {
+            let mut balance = balance.unwrap_or_default();
+            Ok(balance - Uint128::from(amount))
+        },
+    )?;
+
+    BALANCES.update(
+        deps.storage,
+        recipient,
+        |balance| -> Result<Uint128, ContractError> {
+            let mut balance = balance.unwrap_or_default();
+            Ok(balance + Uint128::from(amount))
+        },
+    )?;
+
+    Ok(Response::new().add_attribute("action", "transfer"))
 }
 
-fn approve(
-    deps: &mut DepsMut,
-    _env: Env,
-    info: MessageInfo,
-    spender: Addr,
-    amount: Uint128,
-) -> Result<Response, ContractError> {
-    STATE.update(deps.storage, |mut state| -> Result<State, ContractError> {
-        let sender_allowances = state.allowances.get_mut(&info.sender).ok_or(
-            ContractError::InvalidSenderOrRecipient {
-                addr: info.sender.clone(),
-            },
-        )?;
-
-        sender_allowances.insert(spender.clone(), amount);
-
-        Ok(state)
-    })?;
-
-    Ok(Response::new().add_attribute("action", "approve"))
-}
-
-fn buy_gc(deps: &mut DepsMut, env: Env, info: MessageInfo ) -> Result<Response, ContractError> {
+fn buy_gc(deps: DepsMut, _env: Env, info: MessageInfo) -> Result<Response, ContractError> {
     let state = STATE.load(deps.storage)?;
-    let asset_amount = must_pay(&info, &state.denom).unwrap();
+    let denom = DENOM.load(deps.storage)?;
+    let asset_amount = must_pay(&info, &denom)?.u128();
+    let exchange_rate = EXCHANGE_RATE.load(deps.storage)?;
 
-    transfer_from(
-        deps, // Use the cloned `deps` variable
-        env.clone(),
-        info.clone(),
-        info.sender.clone(),
-        env.contract.address.clone(),
-        asset_amount.into(),
+    let gc_amount = asset_amount / (exchange_rate.u128());
+
+    if gc_amount == 0 {
+        return Err(ContractError::InvalidAmount {});
+    }
+
+    BALANCES.update(
+        deps.storage,
+        state.admin.clone(),
+        |balance| -> Result<Uint128, ContractError> {
+            let mut balance = balance.unwrap_or_default();
+            Ok(balance - Uint128::from(gc_amount))
+        },
     )?;
 
-    let gc_amount = asset_amount / (state.exchange_rate);
-
-    _transfer(
-        deps.borrow_mut(), // Use the original `deps` variable
-        env.clone(),
-        info.clone(),
-        env.contract.address.clone(),
+    BALANCES.update(
+        deps.storage,
         info.sender.clone(),
-        gc_amount,
+        |balance| -> Result<Uint128, ContractError> {
+            let balance = balance.unwrap_or_default();
+            Ok(balance + Uint128::from(gc_amount))
+        },
     )?;
-
 
     let resp = Response::new()
         .add_attribute("action", "buy_gc")
@@ -194,8 +172,8 @@ fn buy_gc(deps: &mut DepsMut, env: Env, info: MessageInfo ) -> Result<Response, 
 }
 
 fn redeem_gc(
-    deps: &mut DepsMut,
-    env: Env,
+    deps: DepsMut,
+    _env: Env,
     info: MessageInfo,
     gc_amount: Uint128,
 ) -> Result<Response, ContractError> {
@@ -203,123 +181,57 @@ fn redeem_gc(
 
     let state = STATE.load(deps.storage)?;
     let denom = DENOM.load(deps.storage)?;
-    let price = gc_amount * state.exchange_rate;
+    let exchange_rate = EXCHANGE_RATE.load(deps.storage)?;
+
+    BALANCES.update(
+        deps.storage,
+        sender,
+        |balance| -> Result<Uint128, ContractError> {
+            let mut balance = balance.ok_or(ContractError::InvalidSenderOrRecipient {
+                addr: info.sender.clone(),
+            })?;
+
+            if balance < gc_amount {
+                return Err(ContractError::InsufficientBalance { balance });
+            }
+            Ok(balance - gc_amount)
+        },
+    )?;
+
+    let price = gc_amount * exchange_rate;
     let messages = BankMsg::Send {
         to_address: state.admin.to_string(),
         amount: coins(price.u128(), &denom),
     };
-
-    _burn(deps, env, info, sender, gc_amount)?;
 
     Ok(Response::new()
         .add_message(messages)
         .add_attribute("action", "redeem_gc"))
 }
 
-fn transfer_from(
-    deps: &mut DepsMut,
-    env: Env,
-    info: MessageInfo,
-    sender: Addr,
-    recipient: Addr,
-    amount: Uint128,
-) -> Result<Response, ContractError> {
-    let state = STATE.load(deps.storage)?;
-    let allowance = state
-        .allowances
-        .get(&sender)
-        .and_then(|m| m.get(&info.sender))
-        .cloned()
-        .ok_or(ContractError::InsufficientAllowance {
-            sender: sender.clone(),
-            addr: info.sender.clone(),
-        })?;
-
-    if amount <= allowance {
-        return Err(ContractError::InsufficientAllowance {
-            sender: sender.clone(),
-            addr: info.sender.clone(),
-        });
-    }
-
-    STATE.update(deps.storage, |mut state| -> Result<State, ContractError> {
-        let sender_allowances =
-            state
-                .allowances
-                .get_mut(&sender)
-                .ok_or(ContractError::InvalidSenderOrRecipient {
-                    addr: sender.clone(),
-                })?;
-
-        sender_allowances.insert(info.sender.clone(), allowance - amount);
-
-        Ok(state)
-    })?;
-
-    _transfer(deps, env, info, sender, recipient, amount)?;
-
-    Ok(Response::new().add_attribute("action", " transfer_from"))
-}
-
-fn _transfer(
-    deps: &mut DepsMut,
-    _env: Env,
-    _info: MessageInfo,
-    sender: Addr,
-    recipient: Addr,
-    amount: Uint128,
-) -> Result<Response, ContractError> {
-    STATE.update(deps.storage, |mut state| -> Result<State, ContractError> {
-        let sender_bal = state.balances.get(&sender).cloned().ok_or(
-            ContractError::InvalidSenderOrRecipient {
-                addr: sender.clone(),
-            },
-        )?;
-        let recipient_bal = state.balances.get(&recipient).cloned().ok_or(
-            ContractError::InvalidSenderOrRecipient {
-                addr: recipient.clone(),
-            },
-        )?;
-        if sender_bal < amount.into() {
-            return Err(ContractError::InsufficientBalance {
-                balance: sender_bal,
-            });
-        }
-
-        state.balances.insert(sender.clone(), sender_bal - amount);
-        state
-            .balances
-            .insert(recipient.clone(), recipient_bal + amount);
-        Ok(state)
-    })?;
-
-    Ok(Response::new().add_attribute("action", "_transfer"))
-}
-
 fn _burn(
-    deps: &mut DepsMut,
+    deps: DepsMut,
     _env: Env,
     _info: MessageInfo,
     sender: Addr,
     amount: Uint128,
 ) -> Result<Response, ContractError> {
-    STATE.update(deps.storage, |mut state| -> Result<State, ContractError> {
-        let sender_bal = state.balances.get(&sender).cloned().ok_or(
-            ContractError::InvalidSenderOrRecipient {
+    BALANCES.update(
+        deps.storage,
+        sender.clone(),
+        |balance| -> Result<Uint128, ContractError> {
+            let mut balance = balance.ok_or(ContractError::InvalidSenderOrRecipient {
                 addr: sender.clone(),
-            },
-        )?;
+            })?;
 
-        if sender_bal < amount.into() {
-            return Err(ContractError::InsufficientBalance {
-                balance: sender_bal,
-            });
-        }
+            if balance < amount {
+                return Err(ContractError::InsufficientBalance { balance });
+            }
 
-        state.balances.insert(sender.clone(), sender_bal - amount);
-
-        Ok(state)
-    })?;
+            balance = balance - amount;
+            Ok(balance - amount)
+        },
+    )?;
 
     Ok(Response::new().add_attribute("action", "_burn"))
 }
@@ -329,12 +241,9 @@ pub fn migrate(_deps: DepsMut, _env: Env, _msg: MigrateMsg) -> StdResult<Respons
     Ok(Response::default())
 }
 
-
-
-
 #[cfg(test)]
 mod tests {
-    use std::default;
+    use std::{default};
 
     use crate::helpers::CwTemplateContract;
     use crate::msg::InstantiateMsg;
@@ -376,24 +285,19 @@ mod tests {
         let cw_template_id = app.store_code(contract_template());
 
         let msg = InstantiateMsg {
-            _admin: Some(ADMIN.to_string()),
-            _name: "GoldCoin".to_string(),
-            _symbol: "GC".to_string(),
-            _decimals: 6,
-            _initial_supply: Uint128::new(1000000),
-            _exchange_rate: Uint128::new(100),
-            _asset: Addr::unchecked("asset"),
-            _denom: "uaum".to_string(),
+            name: "GoldCoin".to_string(),
+            symbol: "GC".to_string(),
+            decimals: 6,
+            initial_supply: Uint128::new(10000),
+            exchange_rate: Uint128::new(100),
+            denom: "uaum".to_string(),
         };
         let cw_template_contract_addr = app
             .instantiate_contract(
                 cw_template_id,
                 Addr::unchecked(USER),
                 &msg,
-                &[Coin {
-                    denom: NATIVE_DENOM.to_string(),
-                    amount: Uint128::new(10),
-                }],
+                &vec![],
                 "test",
                 None,
             )
@@ -405,19 +309,229 @@ mod tests {
     }
 
     mod count {
+        use core::fmt;
+        use std::ops::Add;
+
         use super::*;
-        use crate::msg::ExecuteMsg;
+        use crate::contract::execute;
+        use crate::contract::instantiate;
+        use crate::contract::query;
+        use crate::msg::{ExecuteMsg, QueryMsg};
+        use cosmwasm_std::coin;
+        use cosmwasm_std::from_json;
+        use cosmwasm_std::testing::mock_dependencies;
+        use cosmwasm_std::testing::mock_env;
+        use cosmwasm_std::testing::mock_info;
+        use cosmwasm_std::Deps;
+        use cw2::CONTRACT;
+        use cw20_base::msg;
+        use cw_utils::PaymentError;
+        use serde::de::value::Error;
 
         #[test]
         fn count() {
+            let mut deps = mock_dependencies();
+            let env = mock_env();
+
+            let instantiate_msg = InstantiateMsg {
+                name: "GoldCoin".to_string(),
+                symbol: "GC".to_string(),
+                decimals: 6,
+                initial_supply: Uint128::from(10000u128),
+                exchange_rate: Uint128::from(100u128),
+                denom: "uaum".to_string(),
+            };
+
+            let info = mock_info(USER , &[]);
+            instantiate(deps.as_mut(), env.clone(), info, instantiate_msg).unwrap();
+
+            // let msg = ExecuteMsg::Transfer { recipient: (Addr::unchecked(USER)), amount: (Uint128::from(100u128)) };
+            // let cosmos_msg = cw_template_contract.call(msg).unwrap();
+            // app.execute(Addr::unchecked(USER), cosmos_msg).unwrap();
+
+            let msg = QueryMsg::BalanceOf {
+                addr: env.contract.address.clone(),
+            };
+
+            let bin = query(deps.as_ref(), env, msg).unwrap();
+            let balance: Uint128 = from_json(&bin).unwrap();
+            assert_eq!(balance, Uint128::from(10000u128));
+        }
+
+        #[test]
+
+        fn test_get_supply() {
+            let mut deps = mock_dependencies();
+            let env = mock_env();
+
+            let instantiate_msg = InstantiateMsg {
+                name: "GoldCoin".to_string(),
+                symbol: "GC".to_string(),
+                decimals: 6,
+                initial_supply: Uint128::from(20000000u128),
+                exchange_rate: Uint128::from(100u128),
+                denom: "uaum".to_string(),
+            };
+
+            let info = mock_info(ADMIN, &[]);
+            instantiate(deps.as_mut(), env.clone(), info, instantiate_msg).unwrap();
+
+            // let msg = ExecuteMsg::Transfer { recipient: (Addr::unchecked(USER)), amount: (Uint128::from(100u128)) };
+            // let cosmos_msg = cw_template_contract.call(msg).unwrap();
+            // app.execute(Addr::unchecked(USER), cosmos_msg).unwrap();
+
+            let msg = QueryMsg::GetTotalSupply {};
+
+            let bin = query(deps.as_ref(), env, msg).unwrap();
+            let balance: Uint128 = from_json(&bin).unwrap();
+            assert_eq!(balance, Uint128::from(20000000u128));
+        }
+
+        #[test]
+
+        fn count2() {
             let (mut app, cw_template_contract) = proper_instantiate();
 
-            let msg = ExecuteMsg::BuyGC {  };
-            let cosmos_msg = cw_template_contract.call(msg).unwrap();
-            app.execute(Addr::unchecked(USER), cosmos_msg).unwrap();
-            
-            assert!(true)
-            
+            assert_eq!(Uint128::from(10000u128), Uint128::from(10000u128));
         }
+
+        #[test]
+        fn test_buy() {
+            let mut deps = mock_dependencies();
+            let env = mock_env();
+
+            let instantiate_msg = InstantiateMsg {
+                name: "GoldCoin".to_string(),
+                symbol: "GC".to_string(),
+                decimals: 6,
+                initial_supply: Uint128::from(20000000u128),
+                exchange_rate: Uint128::from(100u128),
+                denom: "uaum".to_string(),
+            };
+
+            let info = mock_info(USER, &[coin(2000000, "uaum")]);
+            instantiate(deps.as_mut(), env.clone(), info.clone(), instantiate_msg).unwrap();
+
+            // let msg = ExecuteMsg::Transfer { recipient: (Addr::unchecked(USER)), amount: (Uint128::from(100u128)) };
+            // let cosmos_msg = cw_template_contract.call(msg).unwrap();
+            // app.execute(Addr::unchecked(USER), cosmos_msg).unwrap();
+
+            let msg = ExecuteMsg::Buy {};
+            execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
+            let bal_msg = QueryMsg::BalanceOf {
+                addr: (Addr::unchecked(USER)),
+            };
+
+            let bin = query(deps.as_ref(), env.clone(), bal_msg).unwrap();
+            let balance: Uint128 = from_json(&bin).unwrap();
+            assert_eq!(balance, Uint128::from(20000u128));
+        }
+
+        #[test]
+        fn test_set_exchange() {
+            let mut deps = mock_dependencies();
+            let env = mock_env();
+
+            let instantiate_msg = InstantiateMsg {
+                name: "GoldCoin".to_string(),
+                symbol: "GC".to_string(),
+                decimals: 6,
+                initial_supply: Uint128::from(20000000u128),
+                exchange_rate: Uint128::from(100u128),
+                denom: "uaum".to_string(),
+            };
+
+            let info = mock_info(ADMIN, &[]);
+            instantiate(deps.as_mut(), env.clone(), info.clone(), instantiate_msg).unwrap();
+
+            let msg = ExecuteMsg::SetExchangeRate { exchange_rate: 69 };
+            let info = mock_info(USER, &[]);
+            execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
+
+            let msg = QueryMsg::GetExchangeRate {};
+
+            let bin = query(deps.as_ref(), env.clone(), msg).unwrap();
+            let balance: Uint128 = from_json(&bin).unwrap();
+            println!("Balance JSON: {:?}", bin);
+            assert_eq!(balance, Uint128::from(69u128));
+        }
+
+        #[test]
+
+        fn test_redeem() {
+            let mut deps = mock_dependencies();
+            let env = mock_env();
+
+            let instantiate_msg = InstantiateMsg {
+                name: "GoldCoin".to_string(),
+                symbol: "GC".to_string(),
+                decimals: 6,
+                initial_supply: Uint128::from(20000000u128),
+                exchange_rate: Uint128::from(100u128),
+                denom: "uaum".to_string(),
+            };
+
+            let info = mock_info(USER, &[coin(2000000, "uaum")]);
+            instantiate(deps.as_mut(), env.clone(), info.clone(), instantiate_msg).unwrap();
+
+            // let msg = ExecuteMsg::Transfer { recipient: (Addr::unchecked(USER)), amount: (Uint128::from(100u128)) };
+            // let cosmos_msg = cw_template_contract.call(msg).unwrap();
+            // app.execute(Addr::unchecked(USER), cosmos_msg).unwrap();
+
+            let msg = ExecuteMsg::Buy {};
+            execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
+
+            let msg = ExecuteMsg::Redeem {
+                gc_amount: Uint128::from(10000u128),
+            };
+            let info = mock_info(USER, &[]);
+            execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
+
+            let bal_msg = QueryMsg::BalanceOf {
+                addr: (Addr::unchecked(USER)),
+            };        
+
+            let bin = query(deps.as_ref(), env.clone(), bal_msg).unwrap();
+            let balance: Uint128 = from_json(&bin).unwrap();
+            assert_eq!(balance, Uint128::from(10000u128));
+        }
+
+        #[test]
+        fn test_transfer() { 
+            let mut deps = mock_dependencies();
+            let env = mock_env();
+
+            let instantiate_msg = InstantiateMsg {
+                name: "GoldCoin".to_string(),
+                symbol: "GC".to_string(),
+                decimals: 6,
+                initial_supply: Uint128::from(20000000u128),
+                exchange_rate: Uint128::from(100u128),
+                denom: "uaum".to_string(),
+            };
+
+            let info = mock_info(USER, &[coin(20000, "uaum")]);
+            instantiate(deps.as_mut(), env.clone(), info.clone(), instantiate_msg).unwrap();
+
+            // let msg = ExecuteMsg::Transfer { recipient: (Addr::unchecked(USER)), amount: (Uint128::from(100u128)) };
+            // let cosmos_msg = cw_template_contract.call(msg).unwrap();
+            // app.execute(Addr::unchecked(USER), cosmos_msg).unwrap();
+
+            let msg = ExecuteMsg::Buy {};
+            execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
+
+            let msg = ExecuteMsg::Transfer { recipient: Addr::unchecked(USER), amount: (Uint128::from(100u128)) } ;
+            let info = mock_info(USER, &[]);
+            execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
+
+            let bal_msg = QueryMsg::BalanceOf {
+                addr: (Addr::unchecked(USER)),
+            };        
+
+            let bin = query(deps.as_ref(), env.clone(), bal_msg).unwrap();
+            let balance: Uint128 = from_json(&bin).unwrap();
+            assert_eq!(balance, Uint128::from(100u128));
+        }
+       
     }
 }
