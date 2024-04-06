@@ -14,11 +14,11 @@ export const LINKS = [
     },
     {
         TEXT: "Learn",
-        HREF: "/learn",
+        HREF: "#learn",
     },
     {
         TEXT: "Trade",
-        HREF: "/trade",
+        HREF: "#trade",
     },
 ];
 

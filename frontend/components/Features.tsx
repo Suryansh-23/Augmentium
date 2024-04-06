@@ -37,7 +37,7 @@ const Bars = () => {
                         maxHeight: i * (Math.random() + 1) * 1 + 2 + "rem",
                     }}
                     className={cn(
-                        `rounded-xl border border-neutral-100 dark:border-white/[0.2] p-3 items-end space-x-2 bg-neutral-100 dark:bg-black`,
+                        `rounded-xl border border-neutral-100 dark:border-white/[0.4] p-3 items-end space-x-2 bg-neutral-100 dark:bg-black`,
                         i === 0 ? "ml-3" : ""
                     )}
                 />
@@ -97,11 +97,22 @@ export default function Features() {
             className: "md:col-span-1",
             icon: <BarChart className="h-4 w-4 text-neutral-500" />,
         },
+        {
+            title: "Automated Proofreading",
+            description: (
+                <span className="text-sm">
+                    Let AI handle the proofreading of your documents.
+                </span>
+            ),
+            header: <Bars />,
+            className: "md:col-span-1",
+            icon: <BarChart className="h-4 w-4 text-neutral-500" />,
+        },
     ];
 
     return (
         <motion.section
-            id="why"
+            id="learn"
             initial={{ opacity: 0, transform: "translateY(25px)" }}
             whileInView={{ opacity: 1, transform: "translateY(0)" }}
             transition={{ duration: 1 }}
@@ -134,6 +145,13 @@ export default function Features() {
                         header={feats[1].header}
                         icon={feats[1].icon}
                         className={feats[1].className}
+                    />
+                    <Card
+                        title={feats[2].title}
+                        description={feats[2].description}
+                        header={feats[2].header}
+                        icon={feats[2].icon}
+                        className={feats[2].className}
                     />
                 </div>
             </div>

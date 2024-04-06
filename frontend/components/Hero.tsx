@@ -5,7 +5,7 @@ import TwinklingStars from "./TwinklingStars";
 
 const Hero = () => {
     return (
-        <>
+        <main id="hero">
             <div className="absolute inset-0 bg-black hidden dark:block">
                 <div id="stars1" className="fixed inset-0"></div>
                 <div id="stars2" className="fixed inset-0"></div>
@@ -73,7 +73,7 @@ const Hero = () => {
                     </div>
                 </motion.div>
             </section>
-        </>
+        </main>
     );
 };
 

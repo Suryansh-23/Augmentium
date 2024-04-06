@@ -1,12 +1,12 @@
 "use client";
-import React from "react";
-import { BackgroundBeams } from "./ui/BackgroundBeams";
-import { Card } from "./ui/Card";
 import Animated from "./Animated";
+import { BackgroundBeams } from "./ui/BackgroundBeams";
 
 export function TradeBanner() {
     return (
-        <div className="h-[40rem] w-full rounded-md bg-black relative flex flex-col items-center justify-center antialiased bg-transparent border-transparent">
+        <div
+            id="trade"
+            className="h-[40rem] w-full rounded-md bg-black relative flex flex-col items-center justify-center antialiased bg-transparent border-transparent">
             <Animated className="max-w-2xl flex flex-col items-center mx-auto p-4 z-10">
                 <h1 className="relative z-10 text-lg md:text-7xl  bg-clip-text text-transparent bg-gradient-to-b from-neutral-200 to-neutral-600  text-center font-sans font-bold">
                     Save for the future

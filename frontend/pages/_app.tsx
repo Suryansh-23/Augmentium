@@ -6,6 +6,8 @@ import { mantra } from "../lib/chainConfig";
 import "../styles/globals.css";
 
 import "@interchain-ui/react/styles";
+import Header from "../components/Header";
+import Footer from "../components/Footer";
 
 function MyApp({ Component, pageProps }: AppProps) {
     return (
@@ -15,7 +17,9 @@ function MyApp({ Component, pageProps }: AppProps) {
             wallets={wallets} // supported wallets
             // walletConnectOptions={}
         >
+            <Header />
             <Component {...pageProps} />
+            <Footer />
         </ChainProvider>
     );
 }

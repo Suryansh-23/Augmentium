@@ -6,6 +6,7 @@ import Footer from "../components/Footer";
 import Header from "../components/Header";
 import Hero from "../components/Hero";
 import { TradeBanner } from "../components/TradeBanner";
+import Why from "../components/Why";
 
 const Home: NextPage = () => {
     // const { count, error, increase } = useCount();
@@ -30,15 +31,14 @@ const Home: NextPage = () => {
 
     return (
         <>
-            <Header />
             <Hero />
             <div className="relative w-full bg-white dark:bg-black">
                 <div className="mx-auto sm:w-full md:w-4/5 lg:w-3/4 p-5 space-y-24 pb-16">
+                    <Why /> 
                     <Features />
                 </div>
                 <TradeBanner />
             </div>
-            <Footer />
         </>
         // <div className={styles.container}>
         //     <Head>

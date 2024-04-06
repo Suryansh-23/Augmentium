@@ -92,19 +92,31 @@ const Footer = () => {
                     <Container size="md">
                         <div className="h-full grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <div className="order-2 sm:order-1 flex flex-col items-center justify-center sm:items-start">
-                                {/* <div className="legal">
+                                <div className="backlinks flex flex-row gap-x-2">
                                     <a
-                                        href="/legal/terms"
+                                        href="/#hero"
                                         className="text-current hover:text-black dark:hover:text-white transition-colors duration-300 ease-in-out">
-                                        Terms
-                                    </a>{" "}
+                                        Home
+                                    </a>
                                     |
                                     <a
-                                        href="/legal/privacy"
+                                        href="/#why"
                                         className="text-current hover:text-black dark:hover:text-white transition-colors duration-300 ease-in-out">
-                                        Privacy
+                                        Why?
                                     </a>
-                                </div> */}
+                                    |
+                                    <a
+                                        href="/#learn"
+                                        className="text-current hover:text-black dark:hover:text-white transition-colors duration-300 ease-in-out">
+                                        Learn
+                                    </a>
+                                    |
+                                    <a
+                                        href="/#trade"
+                                        className="text-current hover:text-black dark:hover:text-white transition-colors duration-300 ease-in-out">
+                                        Trade
+                                    </a>
+                                </div>
                                 <div className="text-sm mt-2">
                                     &copy; 2024 | All rights reserved
                                 </div>
