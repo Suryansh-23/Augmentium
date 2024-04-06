@@ -327,6 +327,8 @@ mod tests {
         use cosmwasm_std::testing::mock_info;
         use cosmwasm_std::Deps;
         use cw20_base::msg;
+        use cw_utils::PaymentError;
+        use serde::de::value::Error;
 
         #[test]
         fn count() {
@@ -456,6 +458,7 @@ mod tests {
 
             let bin = query(deps.as_ref(), env.clone(), msg).unwrap();
             let balance: Uint128 = from_json(&bin).unwrap();
+            println!("Balance JSON: {:?}", bin);
             assert_eq!(balance, Uint128::from(69u128));
         }
 
@@ -493,12 +496,15 @@ mod tests {
 
             let bal_msg = QueryMsg::BalanceOf {
                 addr: (Addr::unchecked(USER)),
-            };
+            };        
 
             let bin = query(deps.as_ref(), env.clone(), bal_msg).unwrap();
             let balance: Uint128 = from_json(&bin).unwrap();
             
             assert_eq!(balance, Uint128::from(10000u128));
         }
+
+
+       
     }
 }
