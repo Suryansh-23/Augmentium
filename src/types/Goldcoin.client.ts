@@ -6,7 +6,7 @@
 
 import { CosmWasmClient, SigningCosmWasmClient, ExecuteResult } from "@cosmjs/cosmwasm-stargate";
 import { Coin, StdFee } from "@cosmjs/amino";
-import {Addr, Uint128, InstantiateMsg, ExecuteMsg, QueryMsg} from "./Goldcoin.types";
+import {Uint128, InstantiateMsg, ExecuteMsg, Addr, QueryMsg} from "./Goldcoin.types";
 export interface GoldcoinReadOnlyInterface {
   contractAddress: string;
   balanceOf: ({

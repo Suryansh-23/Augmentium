@@ -1,13 +1,11 @@
-export type Addr = string;
 export type Uint128 = string;
 export interface InstantiateMsg {
-  _admin: Addr;
-  _decimals: number;
-  _denom: string;
-  _exchange_rate: Uint128;
-  _initial_supply: Uint128;
-  _name: string;
-  _symbol: string;
+  decimals: number;
+  denom: string;
+  exchange_rate: Uint128;
+  initial_supply: Uint128;
+  name: string;
+  symbol: string;
 }
 export type ExecuteMsg = {
   transfer: {
@@ -25,6 +23,7 @@ export type ExecuteMsg = {
     gc_amount: Uint128;
   };
 };
+export type Addr = string;
 export type QueryMsg = {
   balance_of: {
     addr: Addr;

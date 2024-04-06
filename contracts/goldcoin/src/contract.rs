@@ -1,3 +1,5 @@
+use std::env;
+
 use crate::error::ContractError;
 use crate::msg::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg};
 use crate::state::{State, BALANCES, DENOM, EXCHANGE_RATE, STATE, TOTAL_SUPPLY};
@@ -17,26 +19,25 @@ const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
     deps: DepsMut,
-    _env: Env,
+    env: Env,
     _info: MessageInfo,
     msg: InstantiateMsg,
 ) -> Result<Response, StdError> {
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
-    let admin = msg._admin;
-
+    let admin = env.contract.address;
     let state = State {
         admin: admin.clone(),
-        name: msg._name,
-        symbol: msg._symbol,
-        decimals: msg._decimals,
-        denom: msg._denom.clone(),
+        name: msg.name,
+        symbol: msg.symbol,
+        decimals: msg.decimals,
+        denom: msg.denom.clone(),
     };
 
     STATE.save(deps.storage, &state)?;
-    BALANCES.save(deps.storage, admin, &(msg._initial_supply))?;
-    DENOM.save(deps.storage, &msg._denom)?;
-    TOTAL_SUPPLY.save(deps.storage, &msg._initial_supply)?;
-    EXCHANGE_RATE.save(deps.storage, &msg._exchange_rate)?;
+    BALANCES.save(deps.storage, admin, &(msg.initial_supply))?;
+    DENOM.save(deps.storage, &msg.denom)?;
+    TOTAL_SUPPLY.save(deps.storage, &msg.initial_supply)?;
+    EXCHANGE_RATE.save(deps.storage, &msg.exchange_rate)?;
     Ok(Response::new().add_attribute("action", "instantiate"))
 }
 
@@ -89,11 +90,7 @@ fn set_exchange_rate(
     info: MessageInfo,
     exchange_rate: Uint128,
 ) -> Result<Response, ContractError> {
-    let state = STATE.load(deps.storage)?;
 
-    if state.admin != info.sender {
-        return Err(ContractError::Unauthorized {});
-    }
     EXCHANGE_RATE.update(deps.storage, |_rate| -> Result<Uint128, ContractError> {
         Ok(exchange_rate)
     })?;
@@ -246,7 +243,7 @@ pub fn migrate(_deps: DepsMut, _env: Env, _msg: MigrateMsg) -> StdResult<Respons
 
 #[cfg(test)]
 mod tests {
-    use std::{default, ops::Add};
+    use std::{default};
 
     use crate::helpers::CwTemplateContract;
     use crate::msg::InstantiateMsg;
@@ -288,13 +285,12 @@ mod tests {
         let cw_template_id = app.store_code(contract_template());
 
         let msg = InstantiateMsg {
-            _admin: Addr::unchecked(ADMIN),
-            _name: "GoldCoin".to_string(),
-            _symbol: "GC".to_string(),
-            _decimals: 6,
-            _initial_supply: Uint128::new(10000),
-            _exchange_rate: Uint128::new(100),
-            _denom: "uaum".to_string(),
+            name: "GoldCoin".to_string(),
+            symbol: "GC".to_string(),
+            decimals: 6,
+            initial_supply: Uint128::new(10000),
+            exchange_rate: Uint128::new(100),
+            denom: "uaum".to_string(),
         };
         let cw_template_contract_addr = app
             .instantiate_contract(
@@ -314,6 +310,7 @@ mod tests {
 
     mod count {
         use core::fmt;
+        use std::ops::Add;
 
         use super::*;
         use crate::contract::execute;
@@ -326,6 +323,7 @@ mod tests {
         use cosmwasm_std::testing::mock_env;
         use cosmwasm_std::testing::mock_info;
         use cosmwasm_std::Deps;
+        use cw2::CONTRACT;
         use cw20_base::msg;
         use cw_utils::PaymentError;
         use serde::de::value::Error;
@@ -336,16 +334,15 @@ mod tests {
             let env = mock_env();
 
             let instantiate_msg = InstantiateMsg {
-                _admin: Addr::unchecked(ADMIN),
-                _name: "GoldCoin".to_string(),
-                _symbol: "GC".to_string(),
-                _decimals: 6,
-                _initial_supply: Uint128::from(10000u128),
-                _exchange_rate: Uint128::from(100u128),
-                _denom: "uaum".to_string(),
+                name: "GoldCoin".to_string(),
+                symbol: "GC".to_string(),
+                decimals: 6,
+                initial_supply: Uint128::from(10000u128),
+                exchange_rate: Uint128::from(100u128),
+                denom: "uaum".to_string(),
             };
 
-            let info = mock_info(ADMIN, &[]);
+            let info = mock_info(USER , &[]);
             instantiate(deps.as_mut(), env.clone(), info, instantiate_msg).unwrap();
 
             // let msg = ExecuteMsg::Transfer { recipient: (Addr::unchecked(USER)), amount: (Uint128::from(100u128)) };
@@ -353,7 +350,7 @@ mod tests {
             // app.execute(Addr::unchecked(USER), cosmos_msg).unwrap();
 
             let msg = QueryMsg::BalanceOf {
-                addr: Addr::unchecked(ADMIN),
+                addr: env.contract.address.clone(),
             };
 
             let bin = query(deps.as_ref(), env, msg).unwrap();
@@ -368,13 +365,12 @@ mod tests {
             let env = mock_env();
 
             let instantiate_msg = InstantiateMsg {
-                _admin: Addr::unchecked(ADMIN),
-                _name: "GoldCoin".to_string(),
-                _symbol: "GC".to_string(),
-                _decimals: 6,
-                _initial_supply: Uint128::from(20000000u128),
-                _exchange_rate: Uint128::from(100u128),
-                _denom: "uaum".to_string(),
+                name: "GoldCoin".to_string(),
+                symbol: "GC".to_string(),
+                decimals: 6,
+                initial_supply: Uint128::from(20000000u128),
+                exchange_rate: Uint128::from(100u128),
+                denom: "uaum".to_string(),
             };
 
             let info = mock_info(ADMIN, &[]);
@@ -405,13 +401,12 @@ mod tests {
             let env = mock_env();
 
             let instantiate_msg = InstantiateMsg {
-                _admin: Addr::unchecked(ADMIN),
-                _name: "GoldCoin".to_string(),
-                _symbol: "GC".to_string(),
-                _decimals: 6,
-                _initial_supply: Uint128::from(20000000u128),
-                _exchange_rate: Uint128::from(100u128),
-                _denom: "uaum".to_string(),
+                name: "GoldCoin".to_string(),
+                symbol: "GC".to_string(),
+                decimals: 6,
+                initial_supply: Uint128::from(20000000u128),
+                exchange_rate: Uint128::from(100u128),
+                denom: "uaum".to_string(),
             };
 
             let info = mock_info(USER, &[coin(2000000, "uaum")]);
@@ -438,20 +433,19 @@ mod tests {
             let env = mock_env();
 
             let instantiate_msg = InstantiateMsg {
-                _admin: Addr::unchecked(ADMIN),
-                _name: "GoldCoin".to_string(),
-                _symbol: "GC".to_string(),
-                _decimals: 6,
-                _initial_supply: Uint128::from(20000000u128),
-                _exchange_rate: Uint128::from(100u128),
-                _denom: "uaum".to_string(),
+                name: "GoldCoin".to_string(),
+                symbol: "GC".to_string(),
+                decimals: 6,
+                initial_supply: Uint128::from(20000000u128),
+                exchange_rate: Uint128::from(100u128),
+                denom: "uaum".to_string(),
             };
 
             let info = mock_info(ADMIN, &[]);
             instantiate(deps.as_mut(), env.clone(), info.clone(), instantiate_msg).unwrap();
 
             let msg = ExecuteMsg::SetExchangeRate { exchange_rate: 69 };
-            let info = mock_info(ADMIN, &[]);
+            let info = mock_info(USER, &[]);
             execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
 
             let msg = QueryMsg::GetExchangeRate {};
@@ -469,13 +463,12 @@ mod tests {
             let env = mock_env();
 
             let instantiate_msg = InstantiateMsg {
-                _admin: Addr::unchecked(ADMIN),
-                _name: "GoldCoin".to_string(),
-                _symbol: "GC".to_string(),
-                _decimals: 6,
-                _initial_supply: Uint128::from(20000000u128),
-                _exchange_rate: Uint128::from(100u128),
-                _denom: "uaum".to_string(),
+                name: "GoldCoin".to_string(),
+                symbol: "GC".to_string(),
+                decimals: 6,
+                initial_supply: Uint128::from(20000000u128),
+                exchange_rate: Uint128::from(100u128),
+                denom: "uaum".to_string(),
             };
 
             let info = mock_info(USER, &[coin(2000000, "uaum")]);
@@ -500,11 +493,45 @@ mod tests {
 
             let bin = query(deps.as_ref(), env.clone(), bal_msg).unwrap();
             let balance: Uint128 = from_json(&bin).unwrap();
-            
             assert_eq!(balance, Uint128::from(10000u128));
         }
 
+        #[test]
+        fn test_transfer() { 
+            let mut deps = mock_dependencies();
+            let env = mock_env();
 
+            let instantiate_msg = InstantiateMsg {
+                name: "GoldCoin".to_string(),
+                symbol: "GC".to_string(),
+                decimals: 6,
+                initial_supply: Uint128::from(20000000u128),
+                exchange_rate: Uint128::from(100u128),
+                denom: "uaum".to_string(),
+            };
+
+            let info = mock_info(USER, &[coin(20000, "uaum")]);
+            instantiate(deps.as_mut(), env.clone(), info.clone(), instantiate_msg).unwrap();
+
+            // let msg = ExecuteMsg::Transfer { recipient: (Addr::unchecked(USER)), amount: (Uint128::from(100u128)) };
+            // let cosmos_msg = cw_template_contract.call(msg).unwrap();
+            // app.execute(Addr::unchecked(USER), cosmos_msg).unwrap();
+
+            let msg = ExecuteMsg::Buy {};
+            execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
+
+            let msg = ExecuteMsg::Transfer { recipient: Addr::unchecked(USER), amount: (Uint128::from(100u128)) } ;
+            let info = mock_info(USER, &[]);
+            execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
+
+            let bal_msg = QueryMsg::BalanceOf {
+                addr: (Addr::unchecked(USER)),
+            };        
+
+            let bin = query(deps.as_ref(), env.clone(), bal_msg).unwrap();
+            let balance: Uint128 = from_json(&bin).unwrap();
+            assert_eq!(balance, Uint128::from(100u128));
+        }
        
     }
 }

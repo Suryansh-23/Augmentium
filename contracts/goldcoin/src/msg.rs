@@ -8,13 +8,12 @@ use cosmwasm_std::{Addr, Uint128};
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub struct InstantiateMsg {
-    pub _admin: Addr,
-    pub _name: String,
-    pub _symbol: String,
-    pub _decimals: u8,
-    pub _initial_supply: Uint128,
-    pub _exchange_rate: Uint128,
-    pub _denom: String,
+    pub name: String,
+    pub symbol: String,
+    pub decimals: u8,
+    pub initial_supply: Uint128,
+    pub exchange_rate: Uint128,
+    pub denom: String,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
