@@ -1,49 +1,90 @@
 import type { NextPage } from "next";
-import Head from "next/head";
-import { useState } from "react";
-import { useCount } from "../api/counter";
-import styles from "../styles/Home.module.css";
+import { useEffect, useState } from "react";
+// import { useCount } from "../api/counter";
+import Features from "../components/Features";
+import Footer from "../components/Footer";
+import Header from "../components/Header";
+import Hero from "../components/Hero";
+import { TradeBanner } from "../components/TradeBanner";
+import Why from "../components/Why";
 
 const Home: NextPage = () => {
-  const { count, error, increase } = useCount();
-  const [isLoading, setLoading] = useState(false);
+    // const { count, error, increase } = useCount();
+    const [isLoading, setLoading] = useState(false);
+    useEffect(() => {
+        const animate = () => {
+            const animateElements = document.querySelectorAll(".animate");
 
-  return (
-    <div className={styles.container}>
-      <Head>
-        <title>Counter Dapp</title>
-        <meta name="description" content="Counter dapp: an example dapp" />
-        <link rel="icon" href="/favicon.ico" />
-      </Head>
+            animateElements.forEach((element, index) => {
+                setTimeout(() => {
+                    element.classList.add("show");
+                }, index * 150);
+            });
+        };
 
-      <main className={styles.main}>
-        <h1 className={styles.title}>Count</h1>
+        document.addEventListener("DOMContentLoaded", animate);
 
-        <p
-          className={
-            isLoading ? [styles.count, styles.pulse].join(" ") : styles.count
-          }
-        >
-          {count === undefined ? "?" : count}
-        </p>
+        return () => {
+            document.removeEventListener("DOMContentLoaded", animate);
+        };
+    });
 
-        {error ? <p className={styles.error}>Error: {error.message}</p> : <></>}
+    return (
+        <>
+            <Hero />
+            <div className="relative w-full bg-white dark:bg-black">
+                <div className="mx-auto sm:w-full md:w-4/5 lg:w-3/4 p-5 space-y-24 pb-16">
+                    <Why /> 
+                    <Features />
+                </div>
+                <TradeBanner />
+            </div>
+        </>
+        // <div className={styles.container}>
+        //     <Head>
+        //         <title>Counter Dapp</title>
+        //         <meta
+        //             name="description"
+        //             content="Counter dapp: an example dapp"
+        //         />
+        //         <link rel="icon" href="/favicon.ico" />
+        //     </Head>
 
-        <div className={styles.grid}>
-          <a
-            className={styles.card}
-            onClick={async () => {
-              setLoading(true);
-              await increase();
-              setLoading(false);
-            }}
-          >
-            <h2>＋ Increase Counter</h2>
-          </a>
-        </div>
-      </main>
-    </div>
-  );
+        //     <Drawer />
+
+        //     <main className={styles.main}>
+        //         <h1 className={styles.title}>Count</h1>
+
+        //         {/* <p
+        //             className={
+        //                 isLoading
+        //                     ? [styles.count, styles.pulse].join(" ")
+        //                     : styles.count
+        //             }>
+        //             {count === undefined ? "?" : count}
+        //         </p> */}
+        //         {/*
+        //         {error ? (
+        //             <p className={styles.error}>Error: {error.message}</p>
+        //         ) : (
+        //             <></>
+        //         )} */}
+
+        //         <div className={styles.grid}>
+        //             <a
+        //                 className={styles.card}
+        //                 // onClick={async () => {
+        //                 //     setLoading(true);
+        //                 //     await increase();
+        //                 //     setLoading(false);
+        //                 // }}
+        //             >
+        //                 <h2>＋ Increase Counter</h2>
+        //             </a>
+        //         </div>
+        //     </main>
+        // </div>
+    );
 };
 
 export default Home;
