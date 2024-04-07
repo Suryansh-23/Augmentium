@@ -12,6 +12,7 @@
     "@cosmos-kit/keplr": "^2.6.9",
     "@cosmos-kit/keplr-extension": "^2.7.9",
     "@cosmos-kit/react": "^2.10.11",
+    "@interchain-ui/react": "^1.22.11",
     "chain-registry": "^1.33.20",
     "clsx": "^2.1.0",
     "cosmwasm": "^1.1.1",

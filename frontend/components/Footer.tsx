@@ -93,29 +93,29 @@ const Footer = () => {
                         <div className="h-full grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <div className="order-2 sm:order-1 flex flex-col items-center justify-center sm:items-start">
                                 <div className="backlinks flex flex-row gap-x-2">
-                                    <Link
+                                    <a
                                         href="/#hero"
                                         className="text-current hover:text-black dark:hover:text-white transition-colors duration-300 ease-in-out">
                                         Home
-                                    </Link>
+                                    </a>
                                     |
-                                    <Link
+                                    <a
                                         href="/#why"
                                         className="text-current hover:text-black dark:hover:text-white transition-colors duration-300 ease-in-out">
                                         Why?
-                                    </Link>
+                                    </a>
                                     |
-                                    <Link
+                                    <a
                                         href="/#learn"
                                         className="text-current hover:text-black dark:hover:text-white transition-colors duration-300 ease-in-out">
                                         Learn
-                                    </Link>
+                                    </a>
                                     |
-                                    <Link
+                                    <a
                                         href="/#trade"
                                         className="text-current hover:text-black dark:hover:text-white transition-colors duration-300 ease-in-out">
                                         Trade
-                                    </Link>
+                                    </a>
                                 </div>
                                 <div className="text-sm mt-2">
                                     &copy; 2024 | All rights reserved

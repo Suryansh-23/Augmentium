@@ -1,3 +1,4 @@
+"use client";
 import type { NextPage } from "next";
 import { useEffect, useState } from "react";
 // import { useCount } from "../api/counter";
@@ -34,7 +35,7 @@ const Home: NextPage = () => {
             <Hero />
             <div className="relative w-full bg-white dark:bg-black">
                 <div className="mx-auto sm:w-full md:w-4/5 lg:w-3/4 p-5 space-y-24 pb-16">
-                    <Why /> 
+                    <Why />
                     <Features />
                 </div>
                 <TradeBanner />

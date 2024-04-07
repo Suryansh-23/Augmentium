@@ -130,3 +130,8 @@ article img {
 #meteors .shower.ul {
     @apply rotate-315;
 }
+
+[data-part-id="transfer-item-root"] {
+    background-color: transparent !important;
+    @apply backdrop-blur-lg bg-gradient-to-b from-white/5 to-transparent;
+}

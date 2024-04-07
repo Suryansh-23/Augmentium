@@ -5,10 +5,11 @@ import type { AppProps } from "next/app";
 import { mantra } from "../lib/chainConfig";
 import "../styles/globals.css";
 
+import { ThemeProvider } from "@interchain-ui/react";
 import "@interchain-ui/react/styles";
-import Header from "../components/Header";
-import Footer from "../components/Footer";
 import Head from "next/head";
+import Footer from "../components/Footer";
+import Header from "../components/Header";
 
 function MyApp({ Component, pageProps }: AppProps) {
     return (
@@ -18,16 +19,18 @@ function MyApp({ Component, pageProps }: AppProps) {
             wallets={wallets} // supported wallets
             // walletConnectOptions={}
         >
-            <Head>
-                <title>Augmentium</title>
-                <meta
-                    name="description"
-                    content="The stablecoin of the future."
-                />
-            </Head>
-            <Header />
-            <Component {...pageProps} />
-            <Footer />
+            <ThemeProvider>
+                <Head>
+                    <title>Augmentium</title>
+                    <meta
+                        name="description"
+                        content="The stablecoin of the future."
+                    />
+                </Head>
+                <Header />
+                <Component {...pageProps} />
+                <Footer />
+            </ThemeProvider>
         </ChainProvider>
     );
 }

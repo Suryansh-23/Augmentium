@@ -1,4 +1,4 @@
-import { Chain } from "@chain-registry/types";
+import { Chain, AssetList } from "@chain-registry/types";
 
 export const mantra: Chain = {
     chain_name: "mantrachaintestnet",
@@ -47,4 +47,26 @@ export const mantra: Chain = {
             },
         ],
     },
+};
+
+export const augAssetList: AssetList = {
+    chain_name: "mantrachaintestnet",
+    assets: [
+        {
+            base: "uAUG",
+            display: "AUG",
+            name: "Augmentium",
+            description: "The stablecoin of the future.",
+            denom_units: [
+                {
+                    denom: "AUG",
+                    exponent: 6,
+                },
+            ],
+            symbol: "AUG",
+            logo_URIs: {
+                png: "gc.png",
+            },
+        },
+    ],
 };
