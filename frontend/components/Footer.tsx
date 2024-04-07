@@ -19,6 +19,15 @@ const Footer = () => {
         backToTop?.addEventListener("click", goBackToTop);
     };
 
+    const scrolltoHash = function (element_id: string) {
+        const element = document.getElementById(element_id);
+        element?.scrollIntoView({
+            behavior: "smooth",
+            block: "end",
+            inline: "nearest",
+        });
+    };
+
     useEffect(() => {
         initializeBackToTop();
         document.addEventListener("astro:after-swap", initializeBackToTop);
@@ -93,29 +102,29 @@ const Footer = () => {
                         <div className="h-full grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <div className="order-2 sm:order-1 flex flex-col items-center justify-center sm:items-start">
                                 <div className="backlinks flex flex-row gap-x-2">
-                                    <a
-                                        href="/#hero"
-                                        className="text-current hover:text-black dark:hover:text-white transition-colors duration-300 ease-in-out">
+                                    <div
+                                        onClick={() => scrolltoHash("hero")}
+                                        className="text-current cursor-pointer hover:text-black dark:hover:text-white transition-colors duration-300 ease-in-out">
                                         Home
-                                    </a>
+                                    </div>
                                     |
-                                    <a
-                                        href="/#why"
-                                        className="text-current hover:text-black dark:hover:text-white transition-colors duration-300 ease-in-out">
+                                    <div
+                                        onClick={() => scrolltoHash("why")}
+                                        className="text-current cursor-pointer hover:text-black dark:hover:text-white transition-colors duration-300 ease-in-out">
                                         Why?
-                                    </a>
+                                    </div>
                                     |
-                                    <a
-                                        href="/#learn"
-                                        className="text-current hover:text-black dark:hover:text-white transition-colors duration-300 ease-in-out">
+                                    <div
+                                        onClick={() => scrolltoHash("learn")}
+                                        className="text-current cursor-pointer hover:text-black dark:hover:text-white transition-colors duration-300 ease-in-out">
                                         Learn
-                                    </a>
+                                    </div>
                                     |
-                                    <a
-                                        href="/#trade"
-                                        className="text-current hover:text-black dark:hover:text-white transition-colors duration-300 ease-in-out">
+                                    <div
+                                        onClick={() => scrolltoHash("trade")}
+                                        className="text-current cursor-pointer hover:text-black dark:hover:text-white transition-colors duration-300 ease-in-out">
                                         Trade
-                                    </a>
+                                    </div>
                                 </div>
                                 <div className="text-sm mt-2">
                                     &copy; 2024 | All rights reserved
