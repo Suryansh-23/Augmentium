@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { BarChart, PenLine } from "lucide-react";
+import { BarChart, CircleCheck, ShieldCheck } from "lucide-react";
 import Image from "next/image";
 import { cn } from "../lib/utils";
 import { Card } from "./ui/Card";
@@ -49,14 +49,6 @@ const Bars = () => {
 const Coin = () => {
     return (
         <div
-            // initial="initial"
-            // animate="animate"
-            // variants={variants}
-            // transition={{
-            //     duration: 5,
-            //     repeat: Infinity,
-            //     repeatType: "reverse",
-            // }}
             className="flex flex-1 w-full h-full min-h-[6rem] dark:bg-dot-white/[0.2] rounded-lg bg-dot-black/[0.2] flex-col space-y-2 bg-red-500">
             <div className="h-full w-full dark:bg-black bg-white  dark:bg-dot-white/[0.4] relative flex items-center justify-center">
                 {/* Radial gradient for the container to give a faded look */}
@@ -73,24 +65,43 @@ const Coin = () => {
     );
 };
 
+const Checked = () => {
+    return (
+        <div
+            className="flex flex-1 w-full h-full min-h-[6rem] dark:bg-dot-white/[0.2] rounded-lg bg-dot-black/[0.2] flex-col space-y-2 bg-red-500">
+            <div className="h-full w-full dark:bg-black bg-white  dark:bg-dot-white/[0.4] relative flex items-center justify-center">
+                {/* Radial gradient for the container to give a faded look */}
+                <div className="absolute pointer-events-none inset-0 flex items-center justify-center dark:bg-black bg-white [mask-image:radial-gradient(ellipse_at_center,transparent_20%,black)]"></div>
+                <Image
+                    alt="Image"
+                    className="aspect-square object-cover object-center"
+                    height="200"
+                    src="/checked.png"
+                    width="200"
+                />
+            </div>
+        </div>
+    );
+};
+
 export default function Features() {
     const feats = [
         {
-            title: "Contextual Suggestions",
+            title: "Decentralized and Secure",
             description: (
                 <span className="text-sm">
-                    Get AI-powered suggestions based on your writing context.
+                    Augmentium is decentralized and regulation resistant thus ensuring that your investment is safe and sound  .
                 </span>
             ),
             header: <Coin />,
             className: "md:col-span-1",
-            icon: <PenLine className="h-4 w-4 text-neutral-500" />,
+            icon: <ShieldCheck className="h-4 w-4 text-neutral-500" />,
         },
         {
-            title: "Automated Proofreading",
+            title: "Backed by Average price of gold worldwide",
             description: (
                 <span className="text-sm">
-                    Let AI handle the proofreading of your documents.
+                    the price of Augmentium is dependent on average price of gold thus ensuring the uniformity of price worlwide.
                 </span>
             ),
             header: <Bars />,
@@ -98,15 +109,15 @@ export default function Features() {
             icon: <BarChart className="h-4 w-4 text-neutral-500" />,
         },
         {
-            title: "Automated Proofreading",
+            title: "Transparent & 1:1 collateralized",
             description: (
                 <span className="text-sm">
-                    Let AI handle the proofreading of your documents.
+                    Augmentium is a 1:1 collateralized digital asset that offers transparency, ensuring every unit is backed by tangible assets or reserves.
                 </span>
             ),
-            header: <Bars />,
+            header: <Checked />,
             className: "md:col-span-1",
-            icon: <BarChart className="h-4 w-4 text-neutral-500" />,
+            icon: <CircleCheck  className="h-4 w-4 text-neutral-500" />,
         },
     ];
 

@@ -6,12 +6,28 @@ import {
     SwapToken,
     SwapTokenProps,
 } from "@interchain-ui/react";
-import { augAssetList } from "../lib/chainConfig";
 
+import {
+
+} from "@interchain-ui/react";
+import { augAssetList } from "../lib/chainConfig";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from "../@/components/ui/alert-dialog"
+import { Button } from "../@/components/ui/button"
+import { on } from "events";
 const symbols = ["AUM", "AUG"];
 const assets = [...mainAssets, augAssetList];
 
-const noop = () => {};
+const noop = () => { };
 
 const dropdownList = symbols.map((symbol) => {
     const asset = assets.find(
@@ -36,7 +52,7 @@ const TradeBox = () => {
         label: "From",
         options: dropdownList ?? [],
         selected: dropdownList[0],
-        amount: 0,
+        amount: 10,
         onItemSelected: (selectedItem) => {
             console.log("From: onItemSelected", selectedItem);
             setFrom((prev) => ({
@@ -56,7 +72,7 @@ const TradeBox = () => {
         label: "To",
         options: dropdownList ?? [],
         selected: dropdownList[1],
-        amount: 0,
+        amount: from.amount*10 ?? 0,
         onItemSelected: (selectedItem) => {
             console.log("To: onItemSelected", selectedItem);
             setFrom((prev) => ({
@@ -75,10 +91,14 @@ const TradeBox = () => {
     const onToggleDirection = () => {
         const prevTo = to;
         const prevFrom = from;
-
         setTo({ ...prevFrom, label: "To" });
         setFrom({ ...prevTo, label: "From" });
+
+        
     };
+
+
+
 
     return (
         <div className="z-10 relative" id="swap-token-story">
@@ -97,9 +117,12 @@ const TradeBox = () => {
                         minimumReceived: 250.4,
                     }}
                     onToggleDirection={onToggleDirection}
-                    onSwap={() => {
-                        console.log("Swap");
-                    }}
+                    onSwap={
+                        () => {
+                            alert("transaction successful")
+                            to.amount = from.amount * 10
+                        }
+                    }
                     onToleranceChange={(percent) => {
                         console.log("onToleranceChange", percent);
                     }}
