@@ -22,13 +22,13 @@ pub enum ContractError {
     InsufficientFunds {},
 
     #[error("current balance less than amount: {balance:?}")]
-    InsufficientBalance { balance: Uint128 },
+    InsufficientBalance { balance: u128 },
 
     #[error("current allowance less than amount: {addr:?}")]
     InsufficientAllowance { sender: Addr, addr: Addr },
 
     #[error("zero ammount : {balance:?}")]
-    ZeroAmount { balance: Uint128 },
+    ZeroAmount { balance: u128 },
 
     #[error("Invalid amount")]
     InvalidAmount {},

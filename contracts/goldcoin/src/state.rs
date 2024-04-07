@@ -16,6 +16,6 @@ pub struct State {
 
 pub const STATE: Item<State> = Item::new("state");
 pub const DENOM: Item<String> = Item::new("denom");
-pub const TOTAL_SUPPLY: Item<Uint128> = Item::new("total_supply");
-pub const EXCHANGE_RATE: Item<Uint128> = Item::new("exchange_rate");
-pub const BALANCES  : Map<Addr , Uint128> = Map::new("balances");
+pub const TOTAL_SUPPLY: Item<u128> = Item::new("total_supply");
+pub const EXCHANGE_RATE: Item<u128> = Item::new("exchange_rate");
+pub const BALANCES  : Map<Addr , u128> = Map::new("balances");

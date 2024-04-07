@@ -11,8 +11,8 @@ pub struct InstantiateMsg {
     pub name: String,
     pub symbol: String,
     pub decimals: u8,
-    pub initial_supply: Uint128,
-    pub exchange_rate: Uint128,
+    pub initial_supply: u128,
+    pub exchange_rate: u128,
     pub denom: String,
 }
 

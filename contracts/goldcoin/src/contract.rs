@@ -49,9 +49,9 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
     match msg {
-        ExecuteMsg::Transfer { recipient, amount } => transfer(deps, env, info, recipient, amount),
+        ExecuteMsg::Transfer { recipient,amount } => transfer(deps, env, info, recipient, amount),
         ExecuteMsg::SetExchangeRate { exchange_rate } => {
-            set_exchange_rate(deps, env, info, Uint128::from(exchange_rate))
+            set_exchange_rate(deps, env, info, (exchange_rate))
         }
         ExecuteMsg::Buy {} => buy_gc(deps, env, info),
         ExecuteMsg::Redeem { gc_amount } => redeem_gc(deps, env, info, gc_amount),
@@ -88,10 +88,10 @@ fn set_exchange_rate(
     deps: DepsMut,
     _env: Env,
     info: MessageInfo,
-    exchange_rate: Uint128,
+    exchange_rate: u128,
 ) -> Result<Response, ContractError> {
 
-    EXCHANGE_RATE.update(deps.storage, |_rate| -> Result<Uint128, ContractError> {
+    EXCHANGE_RATE.update(deps.storage, |_rate| -> Result<u128, ContractError> {
         Ok(exchange_rate)
     })?;
 
@@ -109,25 +109,25 @@ fn transfer(
         .load(deps.storage, info.sender.clone())
         .unwrap_or_default();
 
-    if balance < amount {
+    if balance < amount.u128() {
         return Err(ContractError::InsufficientBalance { balance });
     }
 
     BALANCES.update(
         deps.storage,
         info.sender.clone(),
-        |balance| -> Result<Uint128, ContractError> {
+        |balance| -> Result<u128, ContractError> {
             let mut balance = balance.unwrap_or_default();
-            Ok(balance - Uint128::from(amount))
+            Ok(balance - (amount.u128()))
         },
     )?;
 
     BALANCES.update(
         deps.storage,
         recipient,
-        |balance| -> Result<Uint128, ContractError> {
+        |balance| -> Result<u128, ContractError> {
             let mut balance = balance.unwrap_or_default();
-            Ok(balance + Uint128::from(amount))
+            Ok(balance + (amount.u128()))
         },
     )?;
 
@@ -140,7 +140,7 @@ fn buy_gc(deps: DepsMut, _env: Env, info: MessageInfo) -> Result<Response, Contr
     let asset_amount = must_pay(&info, &denom)?.u128();
     let exchange_rate = EXCHANGE_RATE.load(deps.storage)?;
 
-    let gc_amount = asset_amount / (exchange_rate.u128());
+    let gc_amount = asset_amount / (exchange_rate);
 
     if gc_amount == 0 {
         return Err(ContractError::InvalidAmount {});
@@ -149,18 +149,18 @@ fn buy_gc(deps: DepsMut, _env: Env, info: MessageInfo) -> Result<Response, Contr
     BALANCES.update(
         deps.storage,
         state.admin.clone(),
-        |balance| -> Result<Uint128, ContractError> {
+        |balance| -> Result<u128, ContractError> {
             let mut balance = balance.unwrap_or_default();
-            Ok(balance - Uint128::from(gc_amount))
+            Ok(balance - (gc_amount))
         },
     )?;
 
     BALANCES.update(
         deps.storage,
         info.sender.clone(),
-        |balance| -> Result<Uint128, ContractError> {
+        |balance| -> Result<u128, ContractError> {
             let balance = balance.unwrap_or_default();
-            Ok(balance + Uint128::from(gc_amount))
+            Ok(balance + (gc_amount))
         },
     )?;
 
@@ -186,22 +186,22 @@ fn redeem_gc(
     BALANCES.update(
         deps.storage,
         sender,
-        |balance| -> Result<Uint128, ContractError> {
+        |balance| -> Result<u128, ContractError> {
             let mut balance = balance.ok_or(ContractError::InvalidSenderOrRecipient {
                 addr: info.sender.clone(),
             })?;
 
-            if balance < gc_amount {
+            if balance < gc_amount.u128() {
                 return Err(ContractError::InsufficientBalance { balance });
             }
-            Ok(balance - gc_amount)
+            Ok(balance - gc_amount.u128())
         },
     )?;
 
-    let price = gc_amount * exchange_rate;
+    let price = gc_amount.u128() * exchange_rate;
     let messages = BankMsg::Send {
         to_address: state.admin.to_string(),
-        amount: coins(price.u128(), &denom),
+        amount: coins(price, &denom),
     };
 
     Ok(Response::new()
@@ -214,12 +214,12 @@ fn _burn(
     _env: Env,
     _info: MessageInfo,
     sender: Addr,
-    amount: Uint128,
+    amount: u128,
 ) -> Result<Response, ContractError> {
     BALANCES.update(
         deps.storage,
         sender.clone(),
-        |balance| -> Result<Uint128, ContractError> {
+        |balance| -> Result<u128, ContractError> {
             let mut balance = balance.ok_or(ContractError::InvalidSenderOrRecipient {
                 addr: sender.clone(),
             })?;
@@ -228,7 +228,6 @@ fn _burn(
                 return Err(ContractError::InsufficientBalance { balance });
             }
 
-            balance = balance - amount;
             Ok(balance - amount)
         },
     )?;
@@ -288,8 +287,8 @@ mod tests {
             name: "GoldCoin".to_string(),
             symbol: "GC".to_string(),
             decimals: 6,
-            initial_supply: Uint128::new(10000),
-            exchange_rate: Uint128::new(100),
+            initial_supply: (10000),
+            exchange_rate: (100),
             denom: "uaum".to_string(),
         };
         let cw_template_contract_addr = app
@@ -337,8 +336,8 @@ mod tests {
                 name: "GoldCoin".to_string(),
                 symbol: "GC".to_string(),
                 decimals: 6,
-                initial_supply: Uint128::from(10000u128),
-                exchange_rate: Uint128::from(100u128),
+                initial_supply: (10000u128),
+                exchange_rate: (100u128),
                 denom: "uaum".to_string(),
             };
 
@@ -368,8 +367,8 @@ mod tests {
                 name: "GoldCoin".to_string(),
                 symbol: "GC".to_string(),
                 decimals: 6,
-                initial_supply: Uint128::from(20000000u128),
-                exchange_rate: Uint128::from(100u128),
+                initial_supply: (20000000),
+                exchange_rate: (100),
                 denom: "uaum".to_string(),
             };
 
@@ -404,8 +403,8 @@ mod tests {
                 name: "GoldCoin".to_string(),
                 symbol: "GC".to_string(),
                 decimals: 6,
-                initial_supply: Uint128::from(20000000u128),
-                exchange_rate: Uint128::from(100u128),
+                initial_supply: (20000000u128),
+                exchange_rate: (100u128),
                 denom: "uaum".to_string(),
             };
 
@@ -436,8 +435,8 @@ mod tests {
                 name: "GoldCoin".to_string(),
                 symbol: "GC".to_string(),
                 decimals: 6,
-                initial_supply: Uint128::from(20000000u128),
-                exchange_rate: Uint128::from(100u128),
+                initial_supply: (20000000u128),
+                exchange_rate: (100u128),
                 denom: "uaum".to_string(),
             };
 
@@ -466,8 +465,8 @@ mod tests {
                 name: "GoldCoin".to_string(),
                 symbol: "GC".to_string(),
                 decimals: 6,
-                initial_supply: Uint128::from(20000000u128),
-                exchange_rate: Uint128::from(100u128),
+                initial_supply: (20000000u128),
+                exchange_rate: (100u128),
                 denom: "uaum".to_string(),
             };
 
@@ -505,8 +504,8 @@ mod tests {
                 name: "GoldCoin".to_string(),
                 symbol: "GC".to_string(),
                 decimals: 6,
-                initial_supply: Uint128::from(20000000u128),
-                exchange_rate: Uint128::from(100u128),
+                initial_supply: (20000000u128),
+                exchange_rate: (100u128),
                 denom: "uaum".to_string(),
             };
 
