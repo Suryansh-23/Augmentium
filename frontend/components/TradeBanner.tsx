@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import Animated from "./Animated";
 import { BackgroundBeams } from "./ui/BackgroundBeams";
 
@@ -17,11 +18,11 @@ export function TradeBanner() {
                     the RWA revolution now. The world is changing, and so should
                     your investments. Currency of the future awaits you.
                 </p>
-                <a
+                <Link
                     href="/trade"
                     className="py-2 mt-2 px-4 rounded-xl truncate text-xs md:text-sm lg:text-base bg-black dark:bg-white text-white dark:text-black hover:opacity-75 blend">
                     Start Trading
-                </a>
+                </Link>
             </Animated>
             <BackgroundBeams />
         </div>
