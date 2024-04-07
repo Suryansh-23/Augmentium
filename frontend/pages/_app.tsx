@@ -2,7 +2,8 @@ import { wallets } from "@cosmos-kit/keplr-extension";
 import { ChainProvider } from "@cosmos-kit/react";
 import { ThemeProvider } from "@interchain-ui/react";
 import "@interchain-ui/react/styles";
-import { assets, chains } from "chain-registry";
+import { assets as tmp, chains as tmp2 } from "chain-registry";
+import { type AssetList, type Chain } from "@chain-registry/types";
 import type { AppProps } from "next/app";
 import Head from "next/head";
 import Footer from "../components/Footer";
@@ -11,11 +12,14 @@ import { mantra } from "../lib/chainConfig";
 import "../styles/globals.css";
 
 function MyApp({ Component, pageProps }: AppProps) {
+    const assets = tmp as AssetList[];
+    const chains = tmp2 as Chain[];
+
     return (
         <ChainProvider
             chains={[...chains, mantra]}
-            assetLists={assets} // supported asset lists
-            wallets={wallets} // supported wallets
+            assetLists={assets}
+            wallets={wallets}
             // walletConnectOptions={}
         >
             <ThemeProvider>
